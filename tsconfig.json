@@ -1,0 +1,45 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "api/apis.js",
+    "screens/rideplan/rideplan.screen.jsx",
+    "screens/ride-details/ride-details.screen.jsx",
+    "screens/verification/email-verification.screen.jsx",
+    "screens/verification/otp-verification.screen.jsx",
+    "screens/verification/styles.jsx",
+    "screens/rideplan/styles.jsx",
+    "screens/ride-details/styles.jsx",
+    "screens/registration/registration.screen.jsx",
+    "screens/onboarding/onboarding.screen.jsx",
+    "screens/onboarding/styles.jsx",
+    "screens/login/login.screen.jsx",
+    "screens/login/styles.jsx",
+    "screens/home/home.screen.jsx",
+    "screens/home/styles.jsx",
+    "utils/container/auth-container.jsx",
+    "utils/container/styles.jsx",
+    "components/common/select-input.jsx",
+    "components/common/input.jsx",
+    "components/common/button.jsx",
+    "components/location/location.search.bar.jsx",
+    "components/location/styles.jsx",
+    "components/login/phone-number.input.jsx",
+    "components/login/signin.text.jsx",
+    "components/ride/ride-fare.jsx",
+    "components/ride/ride.card.jsx",
+    "components/signup/title.view.jsx",
+    "hooks/useGetUserData.jsx",
+    "utils/ride/getDistrict.jsx",
+    "components/modal/footerModal/footer-Modal.jsx"
+  ]
+}

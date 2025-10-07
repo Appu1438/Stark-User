@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Stark",
+    "slug": "stark",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "stark",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#fffff",
+          "image": "./assets/images/logo/splash.png",
+          "dark": {
+            "image": "./assets/images/logo/splash.png",
+            "backgroundColor": "#fffff"
+          },
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/TT-Octosquares-Medium.ttf"
+          ]
+        }
+      ]
+    ],
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#232323"
+      }
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "56aee935-c73a-470b-825f-34e350e13bff"
+      }
+    }
+  }
+}

@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking } 
 import MapView, { Marker, AnimatedRegion } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { useLocalSearchParams, router } from "expo-router";
-import { useDriverStore } from "@/store/driverStore";
 import axiosInstance from "@/api/axiosInstance";
 import socketService from "@/utils/socket/socketService";
 import { styles } from "./styles";
@@ -11,6 +10,8 @@ import getVehicleIcon from "@/utils/ride/getVehicleIcon";
 import estimateArrivalFromDriver from "@/utils/ride/getEstimatedDriverArrival";
 import { Toast } from "react-native-toast-notifications";
 import FooterModal from "@/components/modal/footerModal/footer-Modal";
+import { getAvatar } from "@/utils/avatar/getAvatar";
+import { windowWidth } from "@/themes/app.constant";
 
 
 export default function RideDetailScreen() {
@@ -206,15 +207,38 @@ export default function RideDetailScreen() {
   useEffect(() => {
     if (!ride) return;
 
-    if (ride.status === 'Completed') {
-      setModalMessage("🎉 Ride Completed!");
-      setModalSubMessage(
-        "We hope you enjoyed your ride. Please take a moment to rate your driver and share your feedback. Thank you!"
-      );
-      setModalType("success");
-      setModalVisible(true);
+    const { status, driverId } = ride;
+
+    let message = "";
+    let subMessage = "";
+    let type = "success";
+
+    switch (status) {
+      case "Arrived":
+        message = ` ${driverId.name} Arrived!`;
+        subMessage = `Driver has arrived at your pickup location. Please share your ride OTP with the driver. Wishing you a happy journey!`;
+        break;
+
+      case "Reached":
+        message = "Destination Reached!";
+        subMessage = `${driverId.name} has successfully reached your destination. Please settle your fare. Thank you for riding with us!`;
+        break;
+
+      case "Completed":
+        message = "Ride Completed!";
+        subMessage = "We hope you enjoyed your ride. Please take a moment to rate your driver and share your feedback. Thank you!";
+        break;
+
+      default:
+        return; // no modal for other statuses
     }
+
+    setModalMessage(message);
+    setModalSubMessage(subMessage);
+    setModalType(type);
+    setModalVisible(true);
   }, [ride]);
+
 
 
 
@@ -240,19 +264,43 @@ export default function RideDetailScreen() {
   const getStatusBadgeStyle = () => {
     switch (ride?.status || "Booked") {
       case "Booked":
-        return { backgroundColor: "#FFF8E1", color: "#F57C00" }; // Orange shade
+        return { backgroundColor: "#FFF8E1", color: "#F57C00" }; // Orange
       case "Processing":
-        return { backgroundColor: "#E3F2FD", color: "#1976D2" }; // Blue shade
+        return { backgroundColor: "#E3F2FD", color: "#1976D2" }; // Blue
+      case "Arrived":
+        return { backgroundColor: "#FFE0B2", color: "#F57C00" }; // Light Orange
       case "Ongoing":
-        return { backgroundColor: "#E8F5E9", color: "#388E3C" }; // Green shade
+        return { backgroundColor: "#E8F5E9", color: "#388E3C" }; // Green
+      case "Reached":
+        return { backgroundColor: "#D1C4E9", color: "#673AB7" }; // Purple
       case "Completed":
-        return { backgroundColor: "#F3E5F5", color: "#8E24AA" }; // Purple shade
+        return { backgroundColor: "#F3E5F5", color: "#8E24AA" }; // Purple
       default:
-        return { backgroundColor: "#E3F2FD", color: "#1976D2" };
+        return { backgroundColor: "#E3F2FD", color: "#1976D2" }; // Default Blue
     }
   };
 
+
   const statusBadgeStyle = getStatusBadgeStyle();
+  const statusBadgeText = {
+    Booked: "Ride Confirmed",
+    Processing: "Waiting for Pickup",
+    Arrived: "Driver Arrived",
+    Ongoing: "Trip Ongoing",
+    Reached: "Destination Reached",
+    Completed: "Trip Completed",
+  };
+
+  const footerMessages = {
+    Booked: "Your ride is booked.",
+    Processing: "Your driver is on the way. Please be ready at the pickup location.",
+    Arrived: "Your driver has arrived. Share your ride OTP to start the trip.",
+    Ongoing: "Your trip is in progress. Enjoy your ride!",
+    Reached: "You have reached your destination. Please pay your driver.",
+    Completed: "Thank you for riding with us. Rate your experience!",
+  };
+
+
 
   // ✅ UI
   if (loading) {
@@ -283,17 +331,10 @@ export default function RideDetailScreen() {
     <View style={styles.container}>
       {/* Map Section */}
       <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          region={region}
-          ref={mapRef}
-        >
+        <MapView style={styles.map} region={region} ref={mapRef}>
           {/* Driver Marker (only show before completion) */}
           {driverLocation && ride.status !== "Completed" && (
-            <Marker.Animated
-              coordinate={driverLocation}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
+            <Marker.Animated coordinate={driverLocation} anchor={{ x: 0.5, y: 0.5 }}>
               <Image
                 source={driverIcon}
                 style={{
@@ -302,9 +343,7 @@ export default function RideDetailScreen() {
                   resizeMode: "contain",
                   transform: [
                     {
-                      rotate: `${driver?.vehicle_type === "Auto"
-                        ? driverHeading + 180
-                        : driverHeading
+                      rotate: `${driver?.vehicle_type === "Auto" ? driverHeading + 180 : driverHeading
                         }deg`,
                     },
                   ],
@@ -313,42 +352,30 @@ export default function RideDetailScreen() {
             </Marker.Animated>
           )}
 
-          {/* Pickup & Drop markers */}
-          {ride.status === "Booked" && (
-            <>
-              <Marker coordinate={ride.currentLocation} title="Pickup Location">
-                <View style={styles.locationMarker}>
-                  <Text style={styles.locationMarkerText}>P</Text>
-                </View>
-              </Marker>
-              <Marker coordinate={ride.destinationLocation} title="Drop Location">
-                <View style={styles.locationMarker}>
-                  <Text style={styles.locationMarkerText}>D</Text>
-                </View>
-              </Marker>
-            </>
-          )}
+          {/* Pickup & Drop Markers */}
+          {(ride.status === "Booked" ||
+            ride.status === "Processing" ||
+            ride.status === "Arrived") && (
+              <>
+                {/* Pickup Marker */}
+                <Marker coordinate={ride.currentLocation} title="Pickup Location">
+                  <View style={styles.locationMarker}>
+                    <Text style={styles.locationMarkerText}>P</Text>
+                  </View>
+                </Marker>
 
-          {ride.status === "Processing" && (
-            <>
-              {/* Pickup marker */}
-              <Marker coordinate={ride.currentLocation} title="Pickup Location">
-                <View style={styles.locationMarker}>
-                  <Text style={styles.locationMarkerText}>P</Text>
-                </View>
-              </Marker>
-              {/* Drop marker */}
-              <Marker coordinate={ride.destinationLocation} title="Drop Location">
-                <View style={styles.locationMarker}>
-                  <Text style={styles.locationMarkerText}>D</Text>
-                </View>
-              </Marker>
-            </>
-          )}
+                {/* Drop Marker */}
+                <Marker coordinate={ride.destinationLocation} title="Drop Location">
+                  <View style={styles.locationMarker}>
+                    <Text style={styles.locationMarkerText}>D</Text>
+                  </View>
+                </Marker>
+              </>
+            )}
 
-          {ride.status === "Ongoing" && (
+          {(ride.status === "Ongoing" || ride.status === "Reached") && (
             <>
-              {/* Pickup marker stays faint or hidden since ride has started */}
+              {/* Only show drop marker during ride */}
               <Marker coordinate={ride.destinationLocation} title="Drop Location">
                 <View style={styles.locationMarker}>
                   <Text style={styles.locationMarkerText}>D</Text>
@@ -365,13 +392,10 @@ export default function RideDetailScreen() {
             </Marker>
           )}
 
-          {/* Routes */}
-          {ride.status === "Processing" && driverLocation && (
+          {/* Routes / Directions */}
+          {(ride.status === "Processing" || ride.status === "Arrived") && driverLocation && (
             <MapViewDirections
-              origin={{
-                latitude: driver.latitude,
-                longitude: driver.longitude,
-              }}
+              origin={{ latitude: driver.latitude, longitude: driver.longitude }}
               destination={ride.currentLocation}
               apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
               strokeWidth={4}
@@ -380,12 +404,10 @@ export default function RideDetailScreen() {
             />
           )}
 
-          {ride.status === "Ongoing" && (
+          {(ride.status === "Ongoing" || ride.status === "Reached") && driverLocation && (
             <MapViewDirections
-              origin={{
-                latitude: driver.latitude,
-                longitude: driver.longitude,
-              }} destination={ride.destinationLocation}
+              origin={{ latitude: driver.latitude, longitude: driver.longitude }}
+              destination={ride.destinationLocation}
               apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
               strokeWidth={4}
               strokeColor="#1976D2"
@@ -399,11 +421,12 @@ export default function RideDetailScreen() {
               destination={ride.destinationLocation}
               apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
               strokeWidth={4}
-              strokeColor="#9E9E9E" // lighter since it's only an estimate
+              strokeColor="#9E9E9E" // estimated route
               mode="DRIVING"
             />
           )}
         </MapView>
+
 
 
 
@@ -418,19 +441,12 @@ export default function RideDetailScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View style={styles.headerContainer}>
+          <View
+            style={styles.headerContainer}>
             <Text style={styles.headerTitle}>Ride Details</Text>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: statusBadgeStyle.backgroundColor },
-              ]}
-            >
+            <View style={[styles.statusBadge, { backgroundColor: statusBadgeStyle.backgroundColor }]} >
               <Text style={[styles.statusText, { color: statusBadgeStyle.color }]}>
-                {ride.status === "Booked" && "Ride Booked"}
-                {ride.status === "Processing" && "Waiting for Pickup"}
-                {ride.status === "Ongoing" && "Trip Ongoing"}
-                {ride.status === "Completed" && "Trip Completed"}
+                {statusBadgeText[ride.status] || "Ride Booked"}
               </Text>
             </View>
           </View>
@@ -443,7 +459,7 @@ export default function RideDetailScreen() {
                 uri:
                   (driver?.photo_url) ||
                   (ride.driverId?.photo_url) ||
-                  "https://randomuser.me/api/portraits/men/32.jpg",
+                  getAvatar(ride?.driverId?.gender),
               }}
               style={styles.driverAvatar}
             />
@@ -451,9 +467,17 @@ export default function RideDetailScreen() {
               <Text style={styles.driverName}>
                 {driver?.name || ride.driverId?.name || "Driver not assigned"}
               </Text>
-              <Text style={styles.driverRating}>
-                ⭐ {driver?.rating || ride.driverId?.ratings || "4.8"}
-              </Text>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={[styles.driverRating, { color: '#FFC107', marginRight: 8 }]}>
+                  ⭐ {driver?.rating || ride.driverId?.ratings || "4.8"}
+                </Text>
+
+                <Text style={styles.driverRating}>
+                  Total Trips: {ride?.driverId?.totalRides}
+                </Text>
+              </View>
+
               <Text style={styles.driverVehicle}>
                 {driver?.vehicle_type || ride.driverId?.vehicle_type || "-"} •{" "}
                 {driver?.vehicle_color || ride.driverId?.vehicle_color || "-"} •{" "}
@@ -466,10 +490,12 @@ export default function RideDetailScreen() {
           <View style={styles.divider} />
 
           {/* Trip Info */}
+          {/* Trip Info */}
           <View style={styles.tripInfoContainer}>
+            {/* Pickup Row */}
             <View style={styles.tripInfoRow}>
               <View style={styles.tripInfoIcon}>
-                <Text style={styles.tripInfoIconText}>🛑</Text>
+                <Text style={styles.tripInfoIconText}>📍</Text> {/* Use a standard map pin emoji */}
               </View>
               <View style={styles.tripInfoTextContainer}>
                 <Text style={styles.tripInfoLabel}>Pickup Location</Text>
@@ -479,6 +505,10 @@ export default function RideDetailScreen() {
               </View>
             </View>
 
+            {/* Vertical Line Connector (New Element) */}
+            <View style={{ position: 'absolute', left: windowWidth(24) + 15, top: 38, bottom: 38, width: 2, backgroundColor: '#e0e0e0' }} />
+
+            {/* Drop Row */}
             <View style={styles.tripInfoRow}>
               <View style={styles.tripInfoIcon}>
                 <Text style={styles.tripInfoIconText}>🏁</Text>
@@ -494,11 +524,16 @@ export default function RideDetailScreen() {
 
           <View style={styles.divider} />
 
-          {/* Fare Info */}
+          {/* Fare Info and OTP*/}
           <View style={styles.fareContainer}>
             <View style={styles.fareRow}>
+              <Text style={styles.fareLabel}>OTP</Text>
+              <Text style={[styles.fareValue, styles.otpValue]}>{ride.otp}</Text>
+            </View>
+
+            <View style={styles.fareRow}>
               <Text style={styles.fareLabel}>Fare</Text>
-              <Text style={styles.fareValue}>₹{ride.totalFare}</Text>
+              <Text style={styles.fareValue}>₹ {ride.totalFare}</Text>
             </View>
 
             {(ride.status === "Processing" || ride.status === "Ongoing") && (
@@ -537,16 +572,8 @@ export default function RideDetailScreen() {
           )}
 
           {/* Footer Note */}
-          {/* Footer Note */}
           <Text style={styles.footerNote}>
-            {ride.status === "Booked" &&
-              "Your ride is booked"}
-            {ride.status === "Processing" &&
-              "Your driver is on the way. Please be ready at the pickup location."}
-            {ride.status === "Ongoing" &&
-              "Your trip is in progress. Enjoy your ride!"}
-            {ride.status === "Completed" &&
-              "Thank you for riding with us. Rate your experience!"}
+            {footerMessages[ride.status] || "Your ride is booked."}
           </Text>
 
         </ScrollView>

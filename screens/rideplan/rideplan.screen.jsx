@@ -37,7 +37,6 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import socketService from '@/utils/socket/socketService';
-import { useRideStore } from '@/store/rideStore';
 import { useDriverStore } from '@/store/driverStore';
 import { sendPushNotification } from '@/utils/notifications/sendPushNotification';
 import RideFare from '@/components/ride/ride-fare';
@@ -514,7 +513,7 @@ export default function RidePlanScreen() {
             // message.rideData.driver = matchedDriver;
             // useRideStore.getState().setRideDetails(message.rideData);
             setModalMessage("✅ Your ride has been accepted! Enjoy your ride.");
-            setModalSubMessage(`${matchedDriver.name} is assigned for your Ride . Please pay your driver after reaching your Destination. Have a nice trip . Thank You `)
+            setModalSubMessage(`Driver ${matchedDriver.name} is assigned for your Ride . Please pay your driver after reaching your Destination. Have a nice trip . Thank You `)
             setModalType("success");
             setModalVisible(true);
             // Toast.show("Ride Accepted . Enjoy Your Ride", { type: "success" });
@@ -525,7 +524,7 @@ export default function RidePlanScreen() {
                 pathname: "/(routes)/ride-details",
                 params: { rideId: JSON.stringify(message.rideData.rideData.id) },
               });
-            }, 5000); // 2 seconds delay
+            }, 10000); // 2 seconds delay
           } else if (message.type === "rideRejected" && message.driverId === currentDriver.id && !assigned) {
             console.log(`Driver ${currentDriver.id} rejected, trying next`);
             tryNextDriver();

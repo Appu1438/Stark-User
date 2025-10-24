@@ -41,5 +41,5 @@
     "hooks/useGetUserData.jsx",
     "utils/ride/getDistrict.jsx",
     "components/modal/footerModal/footer-Modal.jsx"
-  ]
+, "utils/ride/calculateDistance.jsx"  ]
 }

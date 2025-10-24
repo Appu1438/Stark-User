@@ -149,21 +149,8 @@ export default function HomeScreen() {
                         <Text style={[styles.rideTitle, { color: color.regularText }]}>
                             Recent Rides
                         </Text>
-                        {/* <ScrollView>
-                            {recentRides?.slice(0, 3).map((item: any, index: number) => (
-                                <RideCard item={item} key={index} />
-                            ))}
-
-                            {recentRides?.length === 0 && (
-                                <Text style={{
-                                    fontSize: 16, fontFamily: 'TT-Octosquares-Medium',
-                                }}>
-                                    You don't have any ride history yet!
-                                </Text>
-                            )}
-                        </ScrollView> */}
                         <FlatList
-                            data={recentRides} // slice if you want to skip the first item
+                            data={recentRides.slice(0, 6)} // slice if you want to skip the first item
                             keyExtractor={(item, index) => item.id || index.toString()}
                             renderItem={({ item }) => <RideCard item={item} />}
                             ListEmptyComponent={

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, FlatList } from "react-native";
 import React, { useEffect, useState } from "react";
 import { styles } from "@/screens/home/styles";
 import color from "@/themes/app.colors";
@@ -29,11 +29,22 @@ export default function History() {
             >
                 Ride History
             </Text>
-            <ScrollView style={{ marginBottom: 50 }}>
-                {recentRides?.map((item: any, index: number) => (
-                    <RideCard item={item} key={index} />
-                ))}
-            </ScrollView>
+            <FlatList
+                data={recentRides} // slice if you want to skip the first item
+                keyExtractor={(item, index) => item.id || index.toString()}
+                renderItem={({ item }) => <RideCard item={item} />}
+                ListEmptyComponent={
+                    <Text style={{
+                        fontFamily: "TT-Octosquares-Medium",
+                        marginBottom: 12,
+                        color: "#222",
+                    }}>
+                        You didn't take any ride yet!
+                    </Text>
+                }
+                contentContainerStyle={{ paddingBottom: 10 }}
+                showsVerticalScrollIndicator={false}
+            />
         </View>
     );
 }

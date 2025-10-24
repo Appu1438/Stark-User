@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback, useDebugValue } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert } from "react-native";
 import MapView, { Marker, AnimatedRegion } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { useLocalSearchParams, router } from "expo-router";
@@ -12,6 +12,12 @@ import { Toast } from "react-native-toast-notifications";
 import FooterModal from "@/components/modal/footerModal/footer-Modal";
 import { getAvatar } from "@/utils/avatar/getAvatar";
 import { windowWidth } from "@/themes/app.constant";
+import { sendPushNotification } from "@/utils/notifications/sendPushNotification";
+import { calculateDistance } from "@/utils/ride/calculateDistance";
+import { getDistrict } from "@/utils/ride/getDistrict";
+import calculateFare from "@/utils/ride/calculateFare";
+import axios from "axios";
+import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 
 
 export default function RideDetailScreen() {
@@ -141,7 +147,6 @@ export default function RideDetailScreen() {
             ...prevRide,
             status: message.status,
           }));
-
           // Optional toast alert
           Toast.show(message.message, { type: "success" });
         }
@@ -193,8 +198,14 @@ export default function RideDetailScreen() {
             // Focus exactly on destination
             return { latitude: to.latitude, longitude: to.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
+
           default:
-            return { latitude: from.latitude, longitude: from.longitude, latitudeDelta: 0.1, longitudeDelta: 0.1 };
+            const latD = (from.latitude + to.latitude) / 2;
+            const lngD = (from.longitude + to.longitude) / 2;
+            const latDeltaD = Math.max(0.05, Math.abs(to.latitude - from.latitude) * 1.5);
+            const lngDeltaD = Math.max(0.05, Math.abs(to.longitude - from.longitude) * 1.5);
+            return { latitude: latD, longitude: lngD, latitudeDelta: latDeltaD, longitudeDelta: lngDeltaD };
+
         }
       };
 
@@ -240,10 +251,6 @@ export default function RideDetailScreen() {
   }, [ride]);
 
 
-
-
-
-
   // ✅ Helpers
   const driverIcon = useMemo(() => getVehicleIcon(driver?.vehicle_type), [driver?.vehicle_type]);
 
@@ -275,10 +282,150 @@ export default function RideDetailScreen() {
         return { backgroundColor: "#D1C4E9", color: "#673AB7" }; // Purple
       case "Completed":
         return { backgroundColor: "#F3E5F5", color: "#8E24AA" }; // Purple
+      case "Cancelled":
+        return { backgroundColor: "#FFF8E1", color: "#F57C00" }; // Orange
       default:
         return { backgroundColor: "#E3F2FD", color: "#1976D2" }; // Default Blue
     }
   };
+
+
+  const handleCancelRide = async () => {
+    if (!ride) return;
+
+    sendPushNotification(
+      ride?.driverId?.notificationToken,
+      "Ride Cancellation Attempt",
+      `User trying to cancel the ride from ${ride.currentLocationName}.`
+    );
+    sendPushNotification(
+      ride?.userId?.notificationToken,
+      "Ride Cancellation Attempt",
+      `You are trying to cancel the ride from ${ride.currentLocationName}.`
+    );
+
+    let cancelMessage = "Are you sure you want to cancel this ride?";
+    let fineAmount = 0;
+    let fare = { totalFare: 0, driverEarnings: 0, platformShare: 0 };
+    let distanceTravelled = 0;
+    let cancelledLocationName = ride.currentLocationName;
+    let finalMessage = "";
+
+    // ✅ Cancellation logic based on ride status
+    switch (ride.status) {
+      case "Booked":
+      case "Processing": {
+        // No charge for Booked or Processing
+        cancelMessage = "Are you sure you want to cancel this ride?";
+        finalMessage = `Ride from ${ride.currentLocationName} got cancelled.`;
+        break;
+      }
+
+      case "Arrived": {
+        // Calculate fine based on total fare range
+        if (ride.totalFare <= 200) fineAmount = 100;        // Short ride → ₹100 fine
+        else if (ride.totalFare <= 500) fineAmount = 150;   // Medium ride → ₹150 fine
+        else fineAmount = 200;                              // Long ride → ₹200 fine
+
+        fare = {
+          totalFare: fineAmount,
+          driverEarnings: fineAmount,
+          platformShare: 0, // all goes to driver
+        };
+
+        cancelMessage = `Driver has arrived. Cancelling now will charge ₹${fineAmount} as compensation.`;
+        finalMessage = `Ride from ${ride.currentLocationName} got cancelled. Driver compensated ₹${fineAmount} for arrival and waiting time.`;
+        break;
+      }
+
+
+      case "Ongoing": {
+        const district = await getDistrict(
+          ride.currentLocation.latitude,
+          ride.currentLocation.longitude
+        );
+
+        const cancelledRes = await axios.get(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${driver?.latitude},${driver?.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`
+        );
+
+        cancelledLocationName =
+          cancelledRes?.data?.results?.[0]?.formatted_address || "Cancelled Location";
+
+        distanceTravelled = await calculateDistance(
+          ride.currentLocation.latitude,
+          ride.currentLocation.longitude,
+          driver?.latitude,
+          driver?.longitude
+        );
+
+        const farePayload = {
+          driver: ride.driverId,
+          distance: distanceTravelled,
+          district: district || "Default",
+        };
+
+        const { totalFare, driverEarnings, platformShare } = await calculateFare(farePayload);
+        fare = { totalFare, driverEarnings, platformShare };
+
+        cancelMessage = `You are midway. Cancelling will charge ₹${totalFare}.`;
+        finalMessage = `Ride from ${ride.currentLocationName} got cancelled. Partial fare for distance travelled: ₹${totalFare}. Refund processed accordingly.`;
+        break;
+      }
+
+      default: {
+        Toast.show("Cannot cancel this ride at this stage.", { type: "danger" });
+        return;
+      }
+    }
+
+    // 🚨 Confirm cancellation
+    const userConfirmed = await new Promise((resolve) => {
+      Alert.alert(
+        "Confirm Cancellation",
+        cancelMessage,
+        [
+          { text: "No", style: "cancel", onPress: () => resolve(false) },
+          { text: "Yes", onPress: () => resolve(true) },
+        ]
+      );
+    });
+
+    if (!userConfirmed) return;
+
+    // ✅ Call backend
+    const response = await axiosInstance.put("/ride/cancel", {
+      rideId: ride.id,
+      fare,
+      distanceTravelled: ride.status === "Ongoing" ? distanceTravelled : 0,
+      location:
+        ride.status === "Ongoing"
+          ? { latitude: driver.latitude, longitude: driver.longitude }
+          : ride.currentLocation,
+      cancelledLocationName,
+    });
+
+    // 🔔 Push notifications
+    sendPushNotification(ride?.driverId?.notificationToken, "Ride Cancelled", finalMessage);
+    sendPushNotification(ride?.userId?.notificationToken, "Ride Cancelled", finalMessage);
+
+    // 🔄 Update local state
+    setRide(response.data.updatedRide);
+    Toast.show("Ride cancelled successfully.", { type: "success" });
+
+    // 📡 Notify driver via socket
+    socketService.send({
+      type: "rideStatusUpdate",
+      role: "user",
+      rideData: {
+        id: ride.id,
+        user: { id: ride.userId._id },
+        driver: { id: ride.driverId._id },
+      },
+      status: response.data.updatedRide.status,
+    });
+  };
+
 
 
   const statusBadgeStyle = getStatusBadgeStyle();
@@ -289,6 +436,7 @@ export default function RideDetailScreen() {
     Ongoing: "Trip Ongoing",
     Reached: "Destination Reached",
     Completed: "Trip Completed",
+    Cancelled: "Cancelled",
   };
 
   const footerMessages = {
@@ -298,6 +446,7 @@ export default function RideDetailScreen() {
     Ongoing: "Your trip is in progress. Enjoy your ride!",
     Reached: "You have reached your destination. Please pay your driver.",
     Completed: "Thank you for riding with us. Rate your experience!",
+    Cancelled: "Your ride has been cancelled!.",
   };
 
 
@@ -329,33 +478,41 @@ export default function RideDetailScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Map Section */}
+      {/* ========== MAP SECTION ========== */}
       <View style={styles.mapContainer}>
         <MapView style={styles.map} region={region} ref={mapRef}>
-          {/* Driver Marker (only show before completion) */}
-          {driverLocation && ride.status !== "Completed" && (
-            <Marker.Animated coordinate={driverLocation} anchor={{ x: 0.5, y: 0.5 }}>
-              <Image
-                source={driverIcon}
-                style={{
-                  width: 45,
-                  height: 45,
-                  resizeMode: "contain",
-                  transform: [
-                    {
-                      rotate: `${driver?.vehicle_type === "Auto" ? driverHeading + 180 : driverHeading
-                        }deg`,
-                    },
-                  ],
-                }}
-              />
-            </Marker.Animated>
-          )}
+          {/* Driver Marker (only before completion or cancellation) */}
+          {driverLocation &&
+            ride.status !== "Completed" &&
+            ride.status !== "Cancelled" && (
+              <Marker.Animated
+                coordinate={driverLocation}
+                anchor={{ x: 0.5, y: 0.5 }}
+              >
+                <Image
+                  source={driverIcon}
+                  style={{
+                    width: 45,
+                    height: 45,
+                    resizeMode: "contain",
+                    transform: [
+                      {
+                        rotate: `${driver?.vehicle_type === "Auto"
+                          ? driverHeading + 180
+                          : driverHeading
+                          }deg`,
+                      },
+                    ],
+                  }}
+                />
+              </Marker.Animated>
+            )}
 
           {/* Pickup & Drop Markers */}
           {(ride.status === "Booked" ||
             ride.status === "Processing" ||
-            ride.status === "Arrived") && (
+            ride.status === "Arrived" ||
+            ride.status === "Cancelled") && (
               <>
                 {/* Pickup Marker */}
                 <Marker coordinate={ride.currentLocation} title="Pickup Location">
@@ -365,7 +522,10 @@ export default function RideDetailScreen() {
                 </Marker>
 
                 {/* Drop Marker */}
-                <Marker coordinate={ride.destinationLocation} title="Drop Location">
+                <Marker
+                  coordinate={ride.destinationLocation}
+                  title="Drop Location"
+                >
                   <View style={styles.locationMarker}>
                     <Text style={styles.locationMarkerText}>D</Text>
                   </View>
@@ -373,17 +533,16 @@ export default function RideDetailScreen() {
               </>
             )}
 
+          {/* Drop marker only during ongoing/reached */}
           {(ride.status === "Ongoing" || ride.status === "Reached") && (
-            <>
-              {/* Only show drop marker during ride */}
-              <Marker coordinate={ride.destinationLocation} title="Drop Location">
-                <View style={styles.locationMarker}>
-                  <Text style={styles.locationMarkerText}>D</Text>
-                </View>
-              </Marker>
-            </>
+            <Marker coordinate={ride.destinationLocation} title="Drop Location">
+              <View style={styles.locationMarker}>
+                <Text style={styles.locationMarkerText}>D</Text>
+              </View>
+            </Marker>
           )}
 
+          {/* Completed marker */}
           {ride.status === "Completed" && (
             <Marker coordinate={ride.destinationLocation}>
               <View style={styles.completedMarker}>
@@ -392,47 +551,51 @@ export default function RideDetailScreen() {
             </Marker>
           )}
 
-          {/* Routes / Directions */}
-          {(ride.status === "Processing" || ride.status === "Arrived") && driverLocation && (
-            <MapViewDirections
-              origin={{ latitude: driver.latitude, longitude: driver.longitude }}
-              destination={ride.currentLocation}
-              apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
-              strokeWidth={4}
-              strokeColor="#1976D2"
-              mode="DRIVING"
-            />
-          )}
+          {/* Route Directions */}
+          {(ride.status === "Processing" || ride.status === "Arrived") &&
+            driverLocation && (
+              <MapViewDirections
+                origin={{
+                  latitude: driver.latitude,
+                  longitude: driver.longitude,
+                }}
+                destination={ride.currentLocation}
+                apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
+                strokeWidth={4}
+                strokeColor="#1976D2"
+                mode="DRIVING"
+              />
+            )}
 
-          {(ride.status === "Ongoing" || ride.status === "Reached") && driverLocation && (
-            <MapViewDirections
-              origin={{ latitude: driver.latitude, longitude: driver.longitude }}
-              destination={ride.destinationLocation}
-              apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
-              strokeWidth={4}
-              strokeColor="#1976D2"
-              mode="DRIVING"
-            />
-          )}
+          {(ride.status === "Ongoing" || ride.status === "Reached") &&
+            driverLocation && (
+              <MapViewDirections
+                origin={{
+                  latitude: driver.latitude,
+                  longitude: driver.longitude,
+                }}
+                destination={ride.destinationLocation}
+                apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
+                strokeWidth={4}
+                strokeColor="#1976D2"
+                mode="DRIVING"
+              />
+            )}
 
-          {ride.status === "Booked" && (
+          {(ride.status === "Booked" || ride.status === "Cancelled") && (
             <MapViewDirections
               origin={ride.currentLocation}
               destination={ride.destinationLocation}
               apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
               strokeWidth={4}
-              strokeColor="#9E9E9E" // estimated route
+              strokeColor="#1976D2"
               mode="DRIVING"
             />
           )}
         </MapView>
-
-
-
-
       </View>
 
-      {/* Details Section */}
+      {/* ========== DETAILS SECTION ========== */}
       <View style={styles.cardWrapper}>
         <View style={styles.cardHandle} />
 
@@ -441,38 +604,46 @@ export default function RideDetailScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View
-            style={styles.headerContainer}>
+          <View style={styles.headerContainer}>
             <Text style={styles.headerTitle}>Ride Details</Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusBadgeStyle.backgroundColor }]} >
-              <Text style={[styles.statusText, { color: statusBadgeStyle.color }]}>
-                {statusBadgeText[ride.status] || "Ride Booked"}
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: statusBadgeStyle.backgroundColor },
+              ]}
+            >
+              <Text
+                style={[styles.statusText, { color: statusBadgeStyle.color }]}
+              >
+                {statusBadgeText[ride?.status] || "Ride Booked"}
               </Text>
             </View>
           </View>
-
 
           {/* Driver Info */}
           <View style={styles.driverSection}>
             <Image
               source={{
                 uri:
-                  (driver?.photo_url) ||
-                  (ride.driverId?.photo_url) ||
+                  driver?.photo_url ||
+                  ride.driverId?.photo_url ||
                   getAvatar(ride?.driverId?.gender),
               }}
               style={styles.driverAvatar}
             />
             <View style={styles.driverInfo}>
               <Text style={styles.driverName}>
-                {driver?.name || ride.driverId?.name || "Driver not assigned"}
+                {driver?.name ||
+                  ride.driverId?.name ||
+                  "Driver not assigned"}
               </Text>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={[styles.driverRating, { color: '#FFC107', marginRight: 8 }]}>
-                  ⭐ {driver?.rating || ride.driverId?.ratings || "4.8"}
+              <View
+                style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}
+              >
+                <Text style={[styles.driverRating, { color: "#FFC107", marginRight: 8 }]}>
+                  ⭐ {driver?.rating || ride.driverId?.ratings}
                 </Text>
-
                 <Text style={styles.driverRating}>
                   Total Trips: {ride?.driverId?.totalRides}
                 </Text>
@@ -486,16 +657,14 @@ export default function RideDetailScreen() {
             </View>
           </View>
 
-
           <View style={styles.divider} />
 
-          {/* Trip Info */}
           {/* Trip Info */}
           <View style={styles.tripInfoContainer}>
             {/* Pickup Row */}
             <View style={styles.tripInfoRow}>
               <View style={styles.tripInfoIcon}>
-                <Text style={styles.tripInfoIconText}>📍</Text> {/* Use a standard map pin emoji */}
+                <Text style={styles.tripInfoIconText}>📍</Text>
               </View>
               <View style={styles.tripInfoTextContainer}>
                 <Text style={styles.tripInfoLabel}>Pickup Location</Text>
@@ -505,8 +674,17 @@ export default function RideDetailScreen() {
               </View>
             </View>
 
-            {/* Vertical Line Connector (New Element) */}
-            <View style={{ position: 'absolute', left: windowWidth(24) + 15, top: 38, bottom: 38, width: 2, backgroundColor: '#e0e0e0' }} />
+            {/* Connector line */}
+            <View
+              style={{
+                position: "absolute",
+                left: windowWidth(24) + 15,
+                top: 38,
+                bottom: 38,
+                width: 2,
+                backgroundColor: "#e0e0e0",
+              }}
+            />
 
             {/* Drop Row */}
             <View style={styles.tripInfoRow}>
@@ -524,37 +702,128 @@ export default function RideDetailScreen() {
 
           <View style={styles.divider} />
 
-          {/* Fare Info and OTP*/}
+          {/* Fare Info */}
+          {/* Fare Info */}
           <View style={styles.fareContainer}>
-            <View style={styles.fareRow}>
-              <Text style={styles.fareLabel}>OTP</Text>
-              <Text style={[styles.fareValue, styles.otpValue]}>{ride.otp}</Text>
-            </View>
+            {ride.status === "Arrived" && (
+              <View style={styles.fareRow}>
+                <Text style={styles.fareLabel}>OTP</Text>
+                <Text style={[styles.fareValue, styles.otpValue]}>
+                  {ride.otp}
+                </Text>
+              </View>
+            )}
 
+            {/* Always show total fare */}
             <View style={styles.fareRow}>
-              <Text style={styles.fareLabel}>Fare</Text>
+              <Text style={styles.fareLabel}>Total Fare</Text>
               <Text style={styles.fareValue}>₹ {ride.totalFare}</Text>
             </View>
 
+            {/* If ongoing or processing, show arrival estimate */}
             {(ride.status === "Processing" || ride.status === "Ongoing") && (
               <View style={styles.fareRow}>
                 <Text style={styles.fareLabel}>
-                  {ride.status === "Processing" && "Estimated Driver Arrival"}
-                  {ride.status === "Ongoing" && "Estimated Time to Reach"}
+                  {ride.status === "Processing"
+                    ? "Estimated Driver Arrival"
+                    : "Estimated Time to Reach"}
                 </Text>
                 <Text style={styles.fareValue}>{arrivalTime}</Text>
               </View>
             )}
 
             <View style={styles.fareRow}>
-              <Text style={styles.fareLabel}>Distance</Text>
+              <Text style={styles.fareLabel}>Planned Distance</Text>
               <Text style={styles.fareValue}>{ride.distance} km</Text>
             </View>
+
+            {/* Show Cancellation Details if cancelled */}
+            {ride.status === "Cancelled" && ride.cancelDetails && (
+              <>
+                <View style={styles.divider} />
+                <Text style={[styles.sectionTitle, { color: "red", marginBottom: 8 }]}>
+                  Cancellation Details
+                </Text>
+
+
+                <View style={styles.detailItem}>
+                  <MaterialIcons name={'cancel'} size={20} color="#5F6368" />
+                  <View style={styles.detailTextContainer}>
+                    <Text style={styles.detailLabel}>Cancelled At</Text>
+                    <Text style={styles.detailText} numberOfLines={2}>
+                      {new Date(ride.cancelDetails.cancelledAt).toLocaleString()
+                      }
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailItem}>
+                  <MaterialIcons name={'location-off'} size={20} color="#5F6368" />
+                  <View style={styles.detailTextContainer}>
+                    <Text style={styles.detailLabel}>Cancelled Location</Text>
+                    <Text style={styles.detailText} numberOfLines={2}>
+                      {`${ride.cancelDetails.cancelledLocationName}`}
+                    </Text>
+                  </View>
+                </View>
+
+
+                <View style={styles.fareRow}>
+                  <Text style={styles.fareLabel}>Travelled Distance</Text>
+                  <Text style={styles.fareValue}>
+                    {ride.cancelDetails.travelledDistance} km
+                  </Text>
+                </View>
+
+                <View style={styles.fareRow}>
+                  <Text style={styles.fareLabel}>Fare for Travelled Distance</Text>
+                  <Text style={styles.fareValue}>₹ {ride.cancelDetails.totalFare}</Text>
+                </View>
+
+                {/* <View style={styles.fareRow}>
+                  <Text style={[styles.fareLabel, { color: "green" }]}>
+                    Refunded to You
+                  </Text>
+                  <Text style={[styles.fareValue, { color: "green", fontWeight: "600" }]}>
+                    ₹ {ride.cancelDetails.refundedAmount}
+                  </Text>
+                </View> */}
+
+                <View style={styles.fareRow}>
+                  <Text style={styles.fareLabel}>Cancelled By</Text>
+                  <Text style={styles.fareValue}>
+                    {ride.cancelDetails.cancelledBy === "user" ? "You" : "Driver"}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
 
+
           {/* Action Buttons */}
-          {ride.status !== "Completed" && (
+          {ride.status !== "Completed" && ride.status !== "Cancelled" && (
             <View style={styles.buttonContainer}>
+              {(ride.status === "Booked" ||
+                ride.status === "Processing" ||
+                ride.status === "Arrived" ||
+                ride.status === "Ongoing") && (
+                  <TouchableOpacity
+                    onPress={handleCancelRide}
+                    style={[
+                      styles.actionButton,
+                      ride.status === "Ongoing"
+                        ? styles.midwayCancelButton
+                        : styles.cancelButton,
+                    ]}
+                  >
+                    <Text style={styles.actionButtonText}>
+                      {ride.status === "Ongoing"
+                        ? "Cancel Midway"
+                        : "Cancel Ride"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
               <TouchableOpacity
                 onPress={handleCall}
                 style={[styles.actionButton, styles.callButton]}
@@ -575,10 +844,10 @@ export default function RideDetailScreen() {
           <Text style={styles.footerNote}>
             {footerMessages[ride.status] || "Your ride is booked."}
           </Text>
-
         </ScrollView>
       </View>
 
+      {/* ========== MODAL SECTION ========== */}
       {modalType && modalVisible && modalMessage && modalSubMessage && (
         <FooterModal
           isVisible={modalVisible}
@@ -588,9 +857,9 @@ export default function RideDetailScreen() {
           onHide={() => setModalVisible(false)}
         />
       )}
-
     </View>
   );
+
 }
 
 

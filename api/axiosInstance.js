@@ -9,33 +9,35 @@ const axiosInstance = axios.create({
   },
 });
 
+let isRefreshing = false; // flag for refresh in progress
+let failedQueue = []; // requests to retry after refresh
+
+const processQueue = (error, token) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      if (token && prom.config) {
+        prom.config.headers["Authorization"] = `Bearer ${token}`;
+        axiosInstance(prom.config).then(prom.resolve).catch(prom.reject);
+      }
+    }
+  });
+  failedQueue = [];
+};
+
 // Request interceptor
 axiosInstance.interceptors.request.use(async (config) => {
   try {
-    // Only read token if not retrying
-    if (!config._retry) {
-      console.log('Req with storage token')
-      const accessToken = await AsyncStorage.getItem("accessToken");
-      if (accessToken) {
-        config.headers["Authorization"] = `Bearer ${accessToken}`;
-      } else {
-        console.log("Request without token");
-      }
-    } else {
-      // Add other custom headers
-      console.log('Req with new Token')
-      config.headers["X-Custom-Header"] = "customHeaderValue";
-
+    const accessToken = await AsyncStorage.getItem("accessToken");
+    if (accessToken) {
+      config.headers["Authorization"] = `Bearer ${accessToken}`;
     }
-
-
     return config;
   } catch (err) {
-    console.error("Request interceptor error:", err);
     return config;
   }
 });
-
 
 // Response interceptor
 axiosInstance.interceptors.response.use(
@@ -44,30 +46,35 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue the request while token is refreshing
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject, config: originalRequest });
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        console.log("Attempting token refresh...");
-
         const newAccessToken = await refreshAccessToken();
+        await AsyncStorage.setItem("accessToken", newAccessToken);
 
-        // if (!newAccessToken) throw new Error("No new access token");
+        processQueue(null, newAccessToken);
 
-        // IMPORTANT: directly overwrite the Authorization header
-        console.log('New  ', newAccessToken)
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
-
-        // Retry the request manually
         return axiosInstance(originalRequest);
       } catch (err) {
+        processQueue(err, null);
         await logout();
         return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
       }
     }
 
     return Promise.reject(error);
   }
 );
-
 
 export default axiosInstance;

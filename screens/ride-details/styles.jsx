@@ -1,5 +1,6 @@
 import color from "@/themes/app.colors";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
+import fonts from "@/themes/app.fonts";
 import { StyleSheet } from "react-native";
 
 // --- Design System Constants ---
@@ -10,15 +11,33 @@ const COLOR_PRIMARY = "#1976D2"; // Brand Blue - for active elements/call to act
 const COLOR_SECONDARY = "#4CAF50"; // Green - for completed/success
 const COLOR_ACCENT = "#FFC107"; // Yellow/Amber - for rating and high-attention (like OTP)
 const COLOR_DANGER = '#D32F2F'; // Red - for emergency
+const PRIMARY_COLOR = color.buttonBg; // Your main brand color
+const SECONDARY_TEXT = '#5F6368'; // Muted text for labels
+const HEADING_TEXT = '#202124'; // Dark text for titles and values
+const CARD_BG = '#F7F8FA'; // Subtle background for card elements
+const SEPARATOR_COLOR = '#EAEAEA'; // Light divider color
 
 const styles = StyleSheet.create({
+
+  centered: {
+    flex: 1,
+    justifyContent: "center",  // centers vertically
+    alignItems: "center",       // centers horizontally
+  },
+  loadingText: {
+    color: 'grey',
+    fontSize: 18,
+    fontFamily: FONT_REGULAR,  // 👈 custom font
+    textAlign: "center",
+    letterSpacing: 1,                     // makes it more clean
+  },
   container: {
     flex: 1,
     backgroundColor: color.whiteColor,
   },
   mapContainer: {
     // Keep map large and prominent
-    height: windowHeight(450), 
+    height: windowHeight(450),
   },
   map: {
     flex: 1,
@@ -41,7 +60,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   cardHandle: {
-    width: 48, 
+    width: 48,
     height: 4,
     backgroundColor: '#e0e0e0',
     borderRadius: 2,
@@ -192,6 +211,16 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.FONT16, // Slightly larger, more dominant value
     color: '#111',
   },
+  sectionTitle: {
+    fontSize: fontSizes.FONT16, // Slightly larger, more dominant value
+    fontFamily: FONT_MEDIUM,
+    color: "#333",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginVertical: 8,
+  },
   otpValue: {
     fontFamily: FONT_MEDIUM,
     fontSize: fontSizes.FONT18,
@@ -201,36 +230,36 @@ const styles = StyleSheet.create({
 
   // --- Action Buttons ---
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 30,
-    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 15,
+    marginBottom: 10,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12, // More rounded corners
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  callButton: {
-    backgroundColor: COLOR_PRIMARY,
-    marginRight: 10,
-    // Stronger shadow for the primary action
-    shadowColor: COLOR_PRIMARY,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  emergencyButton: {
-    backgroundColor: COLOR_DANGER,
-    marginLeft: 10,
+    marginHorizontal: 5,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
   },
   actionButtonText: {
+    color: "#fff",
+    fontSize: fontSizes.FONT13,
     fontFamily: FONT_MEDIUM,
-    fontSize: 16,
-    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  callButton: {
+    backgroundColor: "#1976D2",
+  },
+  emergencyButton: {
+    backgroundColor: "#E53935",
+  },
+  cancelButton: {
+    backgroundColor: "#FF9800", // orange tone for cancel
+  },
+  midwayCancelButton: {
+    backgroundColor: "#F44336", // deeper red for ongoing cancel
   },
   footerNote: {
     fontFamily: FONT_REGULAR,
@@ -271,6 +300,34 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     fontFamily: FONT_MEDIUM,
+  },
+  driverAvatar: {
+    width: 64, // Slightly larger avatar for detail
+    height: 64,
+    borderRadius: 16,
+    marginRight: 16,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center', // Align items to center
+    marginBottom: 18, // Consistent vertical space
+    paddingHorizontal: 8, // slight padding for inner card feel
+  },
+  detailTextContainer: {
+    flex: 1,
+    marginLeft: 18,
+    paddingVertical: 4, // Added small padding for internal spacing
+  },
+  detailLabel: {
+    fontSize: fontSizes.FONT12,
+    color: SECONDARY_TEXT,
+    marginBottom: 2,
+    fontFamily: FONT_REGULAR, // Regular weight for labels
+  },
+  detailText: {
+    fontSize: fontSizes.FONT15,
+    color: HEADING_TEXT,
+    fontFamily: FONT_MEDIUM, // Medium weight for content
   },
 });
 

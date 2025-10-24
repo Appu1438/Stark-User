@@ -44,6 +44,7 @@ import axiosInstance from '@/api/axiosInstance';
 import { latitude } from 'geolib';
 import { getDistrict } from '@/utils/ride/getDistrict';
 import FooterModal from '@/components/modal/footerModal/footer-Modal';
+import { calculateDistance } from '@/utils/ride/calculateDistance';
 export default function RidePlanScreen() {
   const mapRef = useRef(null);
   const fromSearchInputRef = useRef(null);
@@ -376,22 +377,6 @@ export default function RidePlanScreen() {
   };
 
 
-  const calculateDistance = async (lat1, lon1, lat2, lon2) => {
-
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${lat1},${lon1}&destinations=${lat2},${lon2}&mode=driving&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`
-    );
-    const data = await response.json();
-
-    if (data.status === "OK" && data.rows[0].elements[0].status === "OK") {
-      const distanceInKm = data.rows[0].elements[0].distance.value / 1000;
-      console.log(distanceInKm)
-      return distanceInKm;
-    } else {
-      throw new Error("Could not calculate driving distance");
-    }
-  };
-
   useEffect(() => {
     const getDistance = async () => {
       if (marker && currentLocation) {
@@ -440,7 +425,6 @@ export default function RidePlanScreen() {
       const fareDetails = await calculateFare({
         driver: driversForType[0], // use first driver for fare calculation
         distance,
-        duration: parseDuration(travelTimes.driving),
         district: district
       });
 
@@ -475,10 +459,6 @@ export default function RidePlanScreen() {
             setModalSubMessage(" Please try choosing a different cab or try again later. Thank you! ")
             setModalType("error");
             setModalVisible(true);
-            // Toast.show(
-            //   "No drivers are currently available for your selected cab. Please try choosing a different cab or try again later. Thank you!",
-            //   { type: "info" }
-            // );
 
             setwatingForBookingResponse(false);
           }
@@ -734,7 +714,7 @@ export default function RidePlanScreen() {
                                   resizeMode="contain"
                                 />
                                 {driversForType[0].latitude && driversForType[0].longitude && currentLocation && (
-                                  <Text style={{ fontSize: fontSizes.FONT12, color: "#555", fontFamily: "TT-Octosquares-Medium" }}>
+                                  <Text style={{ fontSize: fontSizes.FONT10, color: "#555", fontFamily: "TT-Octosquares-Medium" }}>
                                     {estimateArrivalFromDriver(driversForType[0], currentLocation)} away
                                   </Text>
                                 )}
@@ -758,7 +738,6 @@ export default function RidePlanScreen() {
                                   <RideFare
                                     driver={driversForType[0]}
                                     distance={distance}
-                                    travelTimes={travelTimes}
                                     district={district}
                                   />
                                 </View>

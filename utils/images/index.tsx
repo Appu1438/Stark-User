@@ -19,6 +19,7 @@ export type images = {
   bgOnboarding: ImageSourcePropType;
   hurray: ImageSourcePropType;
   sad: ImageSourcePropType;
+  rideCard: ImageSourcePropType;
 };
 
 const Images: images = {
@@ -40,5 +41,6 @@ const Images: images = {
   bgOnboarding: require("../../assets/images/onBoarding/bgOnboarding.png"),
   sad: require("../../assets/images/modal/sad.png"),
   hurray: require("../../assets/images/modal/hurray.png"),
+  rideCard:require("../../assets/images/homeScreenImage/offerBg.png")
 };
 export default Images;

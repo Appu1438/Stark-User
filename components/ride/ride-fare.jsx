@@ -1,20 +1,18 @@
 import { fontSizes } from "@/themes/app.constant";
 import calculateFare from "@/utils/ride/calculateFare";
-import { parseDuration } from "@/utils/time/parse.duration";
 import React, { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
-export default function RideFare({ driver, distance, travelTimes, district }) {
+export default function RideFare({ driver, distance, district }) {
     const [fare, setFare] = useState(null);
 
     useEffect(() => {
         const fetchFare = async () => {
-            if (!driver || !distance || !travelTimes?.driving) return;
+            if (!driver || !distance) return;
 
             const result = await calculateFare({
                 driver,
                 distance,
-                duration: parseDuration(travelTimes.driving),
                 district
             });
 
@@ -24,7 +22,7 @@ export default function RideFare({ driver, distance, travelTimes, district }) {
         };
 
         fetchFare();
-    }, [driver, distance, travelTimes]);
+    }, [driver, distance]);
 
     return (
         <View>

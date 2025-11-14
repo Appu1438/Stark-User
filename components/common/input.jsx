@@ -29,20 +29,20 @@ export default function Input({
   return (
     <View>
       <Text style={[styles.title, {
-        color: colors.text, fontFamily: "TT-Octosquares-Medium",
+        color: color.primaryText, fontFamily: "TT-Octosquares-Medium",
       }]}>{title}</Text>
       <TextInput
         style={[
           styles.input,
           {
-            backgroundColor: color.lightGray,
-            borderColor: colors.border,
+            // backgroundColor: color.lightGray,
+            borderColor: color.border,
             fontFamily: "TT-Octosquares-Medium",
 
           },
         ]}
         placeholder={placeholder}
-        placeholderTextColor={color.secondaryFont}
+        placeholderTextColor={color.primaryText}
         keyboardType={keyboardType}
         value={value}
         editable={disabled}

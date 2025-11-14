@@ -8,13 +8,18 @@ const styles = StyleSheet.create({
 
     container: {
         ...commonStyles.shadowContainer,
-        backgroundColor: color.whiteColor,
+        backgroundColor: color.subPrimary,
         paddingHorizontal: windowHeight(16),
         paddingVertical: windowHeight(12),
         borderStartStartRadius: windowHeight(16),
         borderStartEndRadius: windowHeight(16),
         borderTopRightRadius: windowHeight(16),
-        borderTopLeftRadius: windowHeight(16)
+        borderTopLeftRadius: windowHeight(16),
+        borderTopWidth: 2,
+        borderLeftWidth: 2,
+        borderWidth: 2,
+        borderColor: color.border
+
     },
     backgroundImage: {
         width: '100%',
@@ -36,4 +41,4 @@ const styles = StyleSheet.create({
 
 })
 
-export  { styles }
+export { styles }

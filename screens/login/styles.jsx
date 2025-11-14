@@ -17,12 +17,13 @@ const styles = StyleSheet.create({
   countryCodeContainer: {
     width: windowWidth(89),
     height: windowHeight(39),
+    backgroundColor:color.subPrimary
 
   },
   phoneNumberInput: {
     width: windowWidth(326),
     height: windowHeight(39),
-    backgroundColor: color.lightGray,
+    backgroundColor: color.subPrimary,
     borderRadius: 4,
     marginHorizontal: windowHeight(9),
     justifyContent: "center",

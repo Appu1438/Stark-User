@@ -62,14 +62,14 @@ export default function PhoneNumberInput({
           style={[
             styles.phoneNumberInput,
             {
-              width: width || windowWidth(326),
+              width: width || windowWidth(320),
               borderColor: color.border,
             },
           ]}
         >
           <TextInput
             style={[commonStyles.regularText, {
-              color: '#000', fontFamily: 'TT-Octosquares-Medium'
+              color: color.primaryText, fontFamily: 'TT-Octosquares-Medium'
             }]}
             placeholderTextColor={color.subtitle}
             placeholder={"Enter your number"}

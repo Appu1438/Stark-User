@@ -1,3 +1,4 @@
+import color from "@/themes/app.colors";
 import Images from "@/utils/images";
 import React from "react";
 import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
   },
   container: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: color.subPrimary,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -48,10 +49,10 @@ const styles = StyleSheet.create({
     minHeight: height * 0.25, // quarter screen
   },
   success: {
-    backgroundColor: "#E8F5E9",
+    backgroundColor: color.subPrimary,
   },
   error: {
-    backgroundColor: "#FFEBEE",
+    backgroundColor: color.subPrimary,
   },
   image: {
     width: 80,
@@ -61,12 +62,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontFamily: 'TT-Octosquares-Medium',
-    color: "#333",
+    color: color.primaryText,
     textAlign: "center",
   },
   subText: {
     fontSize: 14,
-    color: "#666",
+    color: color.secondaryFont,
     textAlign: "center",
     marginTop: 8,
     fontFamily: 'TT-Octosquares-Medium',

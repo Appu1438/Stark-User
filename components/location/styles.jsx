@@ -6,7 +6,7 @@ import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: color.lightGray,
+    backgroundColor: color.subPrimary,
     height: windowHeight(38),
     borderRadius: windowHeight(20),
     marginTop: windowHeight(10),
@@ -14,6 +14,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderWidth: 2,
+    borderColor: color.border
   },
   leftSection: {
     flexDirection: "row",
@@ -22,15 +24,15 @@ const styles = StyleSheet.create({
   },
   textInputStyle: {
     ...commonStyles.regularText,
-    fontSize: fontSizes.FONT19,
+    fontSize: fontSizes.FONT16,
     fontWeight: "500",
-    color: "#000",
+    color: color.primaryText,
     fontFamily: 'TT-Octosquares-Medium'
   },
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: color.buttonBg,
     borderRadius: 20,
     paddingHorizontal: windowWidth(10),
     height: windowHeight(28),

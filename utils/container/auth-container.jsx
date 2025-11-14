@@ -14,6 +14,7 @@ import {
 import Images from "../images";
 import { windowHeight, windowWidth } from "@/themes/app.constant";
 import { styles } from './styles';
+import color from "@/themes/app.colors";
 
 
 const AuthContainer = ({ container, topSpace, imageShow }) => {
@@ -33,6 +34,7 @@ const AuthContainer = ({ container, topSpace, imageShow }) => {
                             fontSize: windowWidth(25),
                             paddingTop: windowHeight(50),
                             textAlign: "center",
+                            color:color.primaryText
                         }}
                     >
                         Stark

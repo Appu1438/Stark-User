@@ -16,10 +16,12 @@ const calculateFare = async ({
       district
     });
 
+    console.log(res.data.data)
+
     // console.log(res.data.data)
     return res.data.data; // { totalFare, platformShare, driverEarnings, fareDetails }
   } catch (error) {
-    console.error("Fare calculation failed:", error);
+    console.log("Fare calculation failed:", error);
     return null;
   }
 };

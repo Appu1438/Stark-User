@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback, useDebugValue } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert } from "react-native";
-import MapView, { Marker, AnimatedRegion } from "react-native-maps";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert, Platform } from "react-native";
+import MapView, { Marker, AnimatedRegion, PROVIDER_GOOGLE } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { useLocalSearchParams, router } from "expo-router";
 import axiosInstance from "@/api/axiosInstance";
@@ -11,13 +11,19 @@ import estimateArrivalFromDriver from "@/utils/ride/getEstimatedDriverArrival";
 import { Toast } from "react-native-toast-notifications";
 import FooterModal from "@/components/modal/footerModal/footer-Modal";
 import { getAvatar } from "@/utils/avatar/getAvatar";
-import { windowWidth } from "@/themes/app.constant";
+import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import { sendPushNotification } from "@/utils/notifications/sendPushNotification";
 import { calculateDistance } from "@/utils/ride/calculateDistance";
 import { getDistrict } from "@/utils/ride/getDistrict";
 import calculateFare from "@/utils/ride/calculateFare";
 import axios from "axios";
-import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
+import Images from "@/utils/images";
+import color from "@/themes/app.colors";
+import { customMapStyle } from "@/utils/map/mapStyle";
+import Button from "@/components/common/button";
+import { useGetUserRideHistories } from "@/hooks/useGetUserData";
+import RideDetailsSkeleton from "./ride-details-skelton.screen";
 
 
 export default function RideDetailScreen() {
@@ -38,6 +44,10 @@ export default function RideDetailScreen() {
   const [modalSubMessage, setModalSubMessage] = useState("");
   const [modalType, setModalType] = useState("success");
 
+  const [rating, setRating] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+
+
   // ✅ Fetch Ride
   useEffect(() => {
     const fetchRide = async () => {
@@ -48,15 +58,18 @@ export default function RideDetailScreen() {
         const { data } = await axiosInstance.get(`/ride/${id}`);
         if (data.success) {
           setRide(data.ride);
+          console.log(data.ride)
 
         } else {
           setError("Ride not found");
         }
       } catch (err) {
-        console.error("Error fetching ride:", err);
+        console.log("Error fetching ride:", err);
         setError("Failed to fetch ride details. Please try again.");
       } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 2000);
       }
     };
 
@@ -188,10 +201,10 @@ export default function RideDetailScreen() {
 
           case "Ongoing":
             // Focus around driver and destination
-            const latO = driver ? (driver.latitude + to.latitude) / 2 : to.latitude;
-            const lngO = driver ? (driver.longitude + to.longitude) / 2 : to.longitude;
-            const latDeltaO = driver ? Math.max(0.05, Math.abs(driver.latitude - to.latitude) * 1.5) : 0.1;
-            const lngDeltaO = driver ? Math.max(0.05, Math.abs(driver.longitude - to.longitude) * 1.5) : 0.1;
+            const latO = driver ? (driver.latitude + to.latitude) / 2 : (from.latitude + to.latitude) / 2;
+            const lngO = driver ? (driver.longitude + to.longitude) / 2 : (from.longitude + to.longitude) / 2;
+            const latDeltaO = driver ? Math.max(0.05, Math.abs(driver.latitude - to.latitude) * 1.5) : Math.max(0.05, Math.abs(from.latitude - to.latitude) * 1.5);
+            const lngDeltaO = driver ? Math.max(0.05, Math.abs(driver.longitude - to.longitude) * 1.5) : Math.max(0.05, Math.abs(from.longitude - to.longitude) * 1.5);
             return { latitude: latO, longitude: lngO, latitudeDelta: latDeltaO, longitudeDelta: lngDeltaO };
 
           case "Completed":
@@ -427,6 +440,58 @@ export default function RideDetailScreen() {
   };
 
 
+  const handleDriverRatings = async () => {
+    try {
+      // Basic validation
+      if (!rating) {
+        Alert.alert("Rating Required", "Please select a star rating before submitting.");
+        return;
+      }
+
+      console.log(rating, rideId)
+      const id = JSON.parse(rideId);
+
+
+      // Example payload
+      const payload = {
+        rating,     // e.g. 4 or 5
+        rideId: id,     // optional - to link which ride this rating belongs to
+      };
+
+      // 🛰️ Example API call (replace with your backend endpoint)
+      const response = await axiosInstance.put('/ride/rating-driver',
+        payload
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        // ✅ Send push notification to the driver when user rates them
+        sendPushNotification(
+          ride?.driverId?.notificationToken,
+          "You Received a New Rating ⭐",
+          `${ride?.userId?.name || "A user"} rated you ${rating} star${rating > 1 ? "s" : ""} for the recent ride from ${ride?.currentLocationName} to ${ride?.destinationLocationName}.`
+        );
+
+        // ✅ Show thank-you alert to the user
+        Alert.alert("Thank You!", "Your rating has been submitted successfully.");
+
+        console.log("✅ Rating submitted & driver notified:", response.data);
+      } else {
+        Alert.alert("Error", "Failed to submit rating. Please try again later.");
+      }
+
+
+      setRide(response.data.updatedRide);
+      refetchRides()
+      setSubmitted(true)
+
+
+    } catch (error) {
+      console.log("❌ Error submitting rating:", error);
+      Alert.alert("Error", "Something went wrong. Please try again later.");
+    }
+  };
+
+
 
   const statusBadgeStyle = getStatusBadgeStyle();
   const statusBadgeText = {
@@ -449,14 +514,22 @@ export default function RideDetailScreen() {
     Cancelled: "Your ride has been cancelled!.",
   };
 
+  const markerIcon = Images.mapMarker
 
+  const strokeColor = Platform.select({
+    ios: color.primaryGray,   // light gray for iOS
+    android: color.primaryGray, // same gray, but Android renders differently
+  });
+
+  const lineDash = Platform.select({
+    ios: [0, 0],     // forces solid line on iOS
+    android: undefined, // Android doesn't need it for solid
+  });
 
   // ✅ UI
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.loadingText}>Loading ride details...</Text>
-      </View>
+      <RideDetailsSkeleton />
     );
   }
 
@@ -480,7 +553,16 @@ export default function RideDetailScreen() {
     <View style={styles.container}>
       {/* ========== MAP SECTION ========== */}
       <View style={styles.mapContainer}>
-        <MapView style={styles.map} region={region} ref={mapRef}>
+        <MapView
+          style={styles.map}
+          region={region}
+          ref={mapRef}
+          provider={PROVIDER_GOOGLE}
+          customMapStyle={customMapStyle}
+          showsMyLocationButton={false}
+          pitchEnabled={false}
+          rotateEnabled={false}
+        >
           {/* Driver Marker (only before completion or cancellation) */}
           {driverLocation &&
             ride.status !== "Completed" &&
@@ -492,8 +574,8 @@ export default function RideDetailScreen() {
                 <Image
                   source={driverIcon}
                   style={{
-                    width: 45,
-                    height: 45,
+                    width: 35,
+                    height: 35,
                     resizeMode: "contain",
                     transform: [
                       {
@@ -509,38 +591,35 @@ export default function RideDetailScreen() {
             )}
 
           {/* Pickup & Drop Markers */}
-          {(ride.status === "Booked" ||
-            ride.status === "Processing" ||
-            ride.status === "Arrived" ||
-            ride.status === "Cancelled") && (
+          {ride.status != "Completed"
+            && (
               <>
                 {/* Pickup Marker */}
-                <Marker coordinate={ride.currentLocation} title="Pickup Location">
-                  <View style={styles.locationMarker}>
-                    <Text style={styles.locationMarkerText}>P</Text>
-                  </View>
+                <Marker
+                  coordinate={ride.currentLocation}
+                  title={`Pickup : ${ride.currentLocationName}`}
+                  zIndex={1000}
+                >
+                  <Image
+                    source={markerIcon}
+                    style={{ width: windowWidth(35), height: windowHeight(35), tintColor: color.primaryGray }}
+                    resizeMode="contain"
+                  />
                 </Marker>
 
                 {/* Drop Marker */}
                 <Marker
                   coordinate={ride.destinationLocation}
-                  title="Drop Location"
-                >
-                  <View style={styles.locationMarker}>
-                    <Text style={styles.locationMarkerText}>D</Text>
-                  </View>
+                  title={`Drop : ${ride.destinationLocationName}`}
+                  zIndex={1000}                >
+                  <Image
+                    source={markerIcon}
+                    style={{ width: windowWidth(35), height: windowHeight(35), tintColor: color.primaryGray }}
+                    resizeMode="contain"
+                  />
                 </Marker>
               </>
             )}
-
-          {/* Drop marker only during ongoing/reached */}
-          {(ride.status === "Ongoing" || ride.status === "Reached") && (
-            <Marker coordinate={ride.destinationLocation} title="Drop Location">
-              <View style={styles.locationMarker}>
-                <Text style={styles.locationMarkerText}>D</Text>
-              </View>
-            </Marker>
-          )}
 
           {/* Completed marker */}
           {ride.status === "Completed" && (
@@ -562,8 +641,13 @@ export default function RideDetailScreen() {
                 destination={ride.currentLocation}
                 apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
                 strokeWidth={4}
-                strokeColor="#1976D2"
+                strokeColor={strokeColor}
+                lineCap="round"
+                lineJoin="round"
+                optimizeWaypoints
                 mode="DRIVING"
+                precision="high"
+                lineDashPattern={lineDash}
               />
             )}
 
@@ -577,8 +661,13 @@ export default function RideDetailScreen() {
                 destination={ride.destinationLocation}
                 apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
                 strokeWidth={4}
-                strokeColor="#1976D2"
+                strokeColor={strokeColor}
+                lineCap="round"
+                lineJoin="round"
+                optimizeWaypoints
                 mode="DRIVING"
+                precision="high"
+                lineDashPattern={lineDash}
               />
             )}
 
@@ -588,8 +677,13 @@ export default function RideDetailScreen() {
               destination={ride.destinationLocation}
               apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
               strokeWidth={4}
-              strokeColor="#1976D2"
+              strokeColor={strokeColor}
+              lineCap="round"
+              lineJoin="round"
+              optimizeWaypoints
               mode="DRIVING"
+              precision="high"
+              lineDashPattern={lineDash}
             />
           )}
         </MapView>
@@ -747,7 +841,7 @@ export default function RideDetailScreen() {
 
 
                 <View style={styles.detailItem}>
-                  <MaterialIcons name={'cancel'} size={20} color="#5F6368" />
+                  <MaterialIcons name={'cancel'} size={20} color={color.primaryGray} />
                   <View style={styles.detailTextContainer}>
                     <Text style={styles.detailLabel}>Cancelled At</Text>
                     <Text style={styles.detailText} numberOfLines={2}>
@@ -758,7 +852,7 @@ export default function RideDetailScreen() {
                 </View>
 
                 <View style={styles.detailItem}>
-                  <MaterialIcons name={'location-off'} size={20} color="#5F6368" />
+                  <MaterialIcons name={'location-off'} size={20} color={color.primaryGray} />
                   <View style={styles.detailTextContainer}>
                     <Text style={styles.detailLabel}>Cancelled Location</Text>
                     <Text style={styles.detailText} numberOfLines={2}>
@@ -780,15 +874,6 @@ export default function RideDetailScreen() {
                   <Text style={styles.fareValue}>₹ {ride.cancelDetails.totalFare}</Text>
                 </View>
 
-                {/* <View style={styles.fareRow}>
-                  <Text style={[styles.fareLabel, { color: "green" }]}>
-                    Refunded to You
-                  </Text>
-                  <Text style={[styles.fareValue, { color: "green", fontWeight: "600" }]}>
-                    ₹ {ride.cancelDetails.refundedAmount}
-                  </Text>
-                </View> */}
-
                 <View style={styles.fareRow}>
                   <Text style={styles.fareLabel}>Cancelled By</Text>
                   <Text style={styles.fareValue}>
@@ -799,46 +884,233 @@ export default function RideDetailScreen() {
             )}
           </View>
 
+          {ride.status === "Completed" && ride.rating && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Ratings Summary</Text>
 
-          {/* Action Buttons */}
-          {ride.status !== "Completed" && ride.status !== "Cancelled" && (
-            <View style={styles.buttonContainer}>
-              {(ride.status === "Booked" ||
-                ride.status === "Processing" ||
-                ride.status === "Arrived" ||
-                ride.status === "Ongoing") && (
-                  <TouchableOpacity
-                    onPress={handleCancelRide}
-                    style={[
-                      styles.actionButton,
-                      ride.status === "Ongoing"
-                        ? styles.midwayCancelButton
-                        : styles.cancelButton,
-                    ]}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  alignItems: "center",
+                  marginTop: 12,
+                }}
+              >
+                {/* User → Driver Rating */}
+                <View style={{ alignItems: "center" }}>
+                  <Ionicons name="person-outline" size={22} color={color.primaryGray} />
+                  <Text
+                    style={{
+                      fontSize: fontSizes.FONT14,
+                      color: color.primaryText,
+                      fontFamily: "TT-Octosquares-Medium",
+                      marginTop: 5,
+                    }}
                   >
-                    <Text style={styles.actionButtonText}>
-                      {ride.status === "Ongoing"
-                        ? "Cancel Midway"
-                        : "Cancel Ride"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                    For You
+                  </Text>
+                  <View style={{ flexDirection: "row", marginTop: 5 }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <MaterialIcons
+                        key={star}
+                        name={
+                          star <= (ride.userRating || 0)
+                            ? "star"
+                            : "star-border"
+                        }
+                        size={20}
+                        color={
+                          star <= (ride.userRating || 0)
+                            ? "#FFD700"
+                            : "#B0B0B0"
+                        }
+                      />
+                    ))}
+                  </View>
+                </View>
 
-              <TouchableOpacity
-                onPress={handleCall}
-                style={[styles.actionButton, styles.callButton]}
-              >
-                <Text style={styles.actionButtonText}>Call Driver</Text>
-              </TouchableOpacity>
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 50,
+                    width: 1,
+                    backgroundColor: color.border,
+                    opacity: 0.6,
+                  }}
+                />
 
-              <TouchableOpacity
-                onPress={handleEmergency}
-                style={[styles.actionButton, styles.emergencyButton]}
-              >
-                <Text style={styles.actionButtonText}>Emergency</Text>
-              </TouchableOpacity>
+                {/* Driver → User Rating */}
+                <View style={{ alignItems: "center" }}>
+                  <Ionicons name="car-outline" size={22} color={color.primaryGray} />
+                  <Text
+                    style={{
+                      fontSize: fontSizes.FONT14,
+                      color: color.primaryText,
+                      fontFamily: "TT-Octosquares-Medium",
+                      marginTop: 5,
+                    }}
+                  >
+                    For Driver
+                  </Text>
+                  <View style={{ flexDirection: "row", marginTop: 5 }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <MaterialIcons
+                        key={star}
+                        name={
+                          star <= (ride.driverRating || 0)
+                            ? "star"
+                            : "star-border"
+                        }
+                        size={20}
+                        color={
+                          star <= (ride.driverRating || 0)
+                            ? "#FFD700"
+                            : "#B0B0B0"
+                        }
+                      />
+                    ))}
+                  </View>
+                </View>
+
+                {/* Divider */}
+                <View
+                  style={{
+                    height: 50,
+                    width: 1,
+                    backgroundColor: color.border,
+                    opacity: 0.6,
+                  }}
+                />
+
+                {/* Overall Ride Rating */}
+                <View style={{ alignItems: "center" }}>
+                  <Ionicons name="stats-chart-outline" size={22} color={color.primaryGray} />
+                  <Text
+                    style={{
+                      fontSize: fontSizes.FONT14,
+                      color: color.primaryText,
+                      fontFamily: "TT-Octosquares-Medium",
+                      marginTop: 5,
+                    }}
+                  >
+                    Ride Avg
+                  </Text>
+                  <View style={{ flexDirection: "row", marginTop: 5 }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <MaterialIcons
+                        key={star}
+                        name={
+                          star <= (ride.rating || 0)
+                            ? "star"
+                            : "star-border"
+                        }
+                        size={20}
+                        color={
+                          star <= (ride.rating || 0)
+                            ? "#FFD700"
+                            : "#B0B0B0"
+                        }
+                      />
+                    ))}
+                  </View>
+                </View>
+              </View>
             </View>
           )}
+
+          {ride.status === "Completed" && !ride.driverRating && (
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingTitle}>Rate Your Driver</Text>
+
+              <View style={styles.starContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => !ride.driverRating && setRating(star)} // Disable edit if already rated
+                    disabled={!!ride.driverRating || submitted} // disable if rated or after submission
+                  >
+                    <MaterialIcons
+                      name={
+                        star <= (ride.driverRating || rating)
+                          ? "star"
+                          : "star-border"
+                      }
+                      size={25}
+                      color={star <= (ride.driverRating || rating) ? "#FFD700" : "#B0B0B0"}
+                      style={{ marginHorizontal: 10, marginBottom: 5 }}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {ride.rating || submitted ? (
+                <Text style={styles.thankYouText}>
+                  Thank you for your feedback!
+                </Text>
+              ) : (
+                <Button
+                  onPress={handleDriverRatings}
+                  style={[styles.actionButton, styles.supportButton]}
+                  title={"Submit Rating"}
+                />
+              )}
+            </View>
+          )}
+
+
+          {/* Action Buttons */}
+          {ride.status !== "Cancelled" ? (
+            <View style={styles.buttonContainer}>
+              {ride.status !== "Completed" ? (
+                <>
+                  {(ride.status === "Booked" ||
+                    ride.status === "Processing" ||
+                    ride.status === "Arrived" ||
+                    ride.status === "Ongoing") && (
+                      <TouchableOpacity
+                        onPress={handleCancelRide}
+                        style={[
+                          styles.actionButton,
+                          ride.status === "Ongoing"
+                            ? styles.midwayCancelButton
+                            : styles.cancelButton,
+                        ]}
+                      >
+                        <Text style={styles.actionButtonText}>
+                          {ride.status === "Ongoing" ? "Cancel Midway" : "Cancel Ride"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                  <TouchableOpacity
+                    onPress={handleCall}
+                    style={[styles.actionButton, styles.callButton]}
+                  >
+                    <Text style={styles.actionButtonText}>Call Driver</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleEmergency}
+                    style={[styles.actionButton, styles.emergencyButton]}
+                  >
+                    <Text style={styles.actionButtonText}>Emergency</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                // ✅ When ride is completed
+                <>
+                  {/* 📞 Contact Support Button */}
+                  <Button
+                    onPress={handleEmergency}
+                    style={[styles.actionButton, styles.supportButton]}
+                    title={"Contact Support"}
+                  />
+
+                </>
+
+              )}
+            </View>
+          ) : null}
 
           {/* Footer Note */}
           <Text style={styles.footerNote}>

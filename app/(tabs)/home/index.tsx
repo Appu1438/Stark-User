@@ -3,9 +3,8 @@ import React from 'react'
 import { useGetUserData } from '@/hooks/useGetUserData'
 import HomeScreen from '@/screens/home/home.screen'
 
-export default function home() {
+export default function index() {
 
-  const { loading, user } = useGetUserData()
   return (
     <HomeScreen />
   )

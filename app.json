@@ -1,23 +1,23 @@
 {
   "expo": {
     "name": "Stark",
-    "slug": "stark",
+    "slug": "stark-user",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo/FullLogo.png",
     "scheme": "stark",
     "userInterfaceStyle": "light",
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#fffff",
-          "image": "./assets/images/logo/splash.png",
+          "backgroundColor": "#000000",
+          "image": "./assets/images/logo/FullLogo.png",
           "dark": {
-            "image": "./assets/images/logo/splash.png",
-            "backgroundColor": "#fffff"
+            "image": "./assets/images/logo/FullLogo.png",
+            "backgroundColor": "#000000"
           },
-          "imageWidth": 200
+          "imageWidth": 250
         }
       ],
       [
@@ -31,12 +31,18 @@
     ],
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#232323"
-      }
+        "foregroundImage": "./assets/images/logo/FullLogo.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.adithyanskumar.stark"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./assets/images/logo/FullLogo.png",
+      "bundleIdentifier": "com.adithyanskumar.stark",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "extra": {
       "eas": {

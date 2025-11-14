@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: color.whiteColor,
+    backgroundColor: color.bgDark,
   },
   mapContainer: {
     // Keep map large and prominent
@@ -47,13 +47,13 @@ const styles = StyleSheet.create({
   cardWrapper: {
     flex: 1,
     marginTop: -50, // Overlap map for a continuous feel
-    backgroundColor: color.whiteColor,
+    backgroundColor: color.subPrimary,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingTop: 16,
     paddingHorizontal: PADDING_HORIZONTAL,
     // Refined, softer shadow for depth
-    shadowColor: "#000",
+    shadowColor: color.primary,
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1, // Slightly more pronounced shadow
     shadowRadius: 12,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   cardHandle: {
     width: 48,
     height: 4,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: color.lightGray,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONT_MEDIUM,
     fontSize: fontSizes.FONT20, // Make the title bolder
-    color: "#111",
+    color: color.primaryText,
   },
   statusBadge: {
     paddingHorizontal: 16,
@@ -109,8 +109,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     marginBottom: 24, // Clean separation from other sections
-    backgroundColor: '#F5F8FA', // Subtle background color
+    // backgroundColor: color.primary, // Subtle background color
     borderRadius: 16, // Smoother corners
+    borderWidth: 2,
+    borderColor: color.border
   },
   driverAvatar: {
     width: 64, // Slightly larger avatar for detail
@@ -124,25 +126,25 @@ const styles = StyleSheet.create({
   driverName: {
     fontFamily: FONT_MEDIUM,
     fontSize: 16,
-    color: '#111',
+    color: color.primaryText,
     marginBottom: 4,
   },
   driverRating: {
     fontFamily: FONT_REGULAR,
     fontSize: 13,
-    color: '#666',
+    color: color.lightGray,
     marginBottom: 4,
   },
   driverVehicle: {
     fontFamily: FONT_REGULAR,
     fontSize: 13,
-    color: '#888',
+    color: color.lightGray,
   },
 
   // --- Separator ---
   divider: {
     height: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: color.primaryText,
     marginVertical: 20, // Consistent vertical rhythm
   },
 
@@ -180,21 +182,24 @@ const styles = StyleSheet.create({
   tripInfoLabel: {
     fontFamily: FONT_REGULAR,
     fontSize: 12,
-    color: '#888',
+    color: color.primaryText,
     marginBottom: 2,
   },
   tripInfoValue: {
     fontFamily: FONT_MEDIUM,
     fontSize: 15,
-    color: '#333',
+    color: color.primaryText,
   },
 
   // --- Fare & Timings ---
   fareContainer: {
-    backgroundColor: '#F9F9FB', // Lightest gray for clean background
+    // backgroundColor: color.primary, // Lightest gray for clean background
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
+    borderWidth: 2,
+    borderColor: color.border
+
   },
   fareRow: {
     flexDirection: 'row',
@@ -204,17 +209,17 @@ const styles = StyleSheet.create({
   fareLabel: {
     fontFamily: FONT_REGULAR,
     fontSize: fontSizes.FONT14,
-    color: '#666',
+    color: color.primaryText,
   },
   fareValue: {
     fontFamily: FONT_MEDIUM,
     fontSize: fontSizes.FONT16, // Slightly larger, more dominant value
-    color: '#111',
+    color: color.primaryText,
   },
   sectionTitle: {
     fontSize: fontSizes.FONT16, // Slightly larger, more dominant value
     fontFamily: FONT_MEDIUM,
-    color: "#333",
+    color:color.primaryText,
   },
   divider: {
     height: 1,
@@ -233,41 +238,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: 25,
+    // marginBottom: 10,
   },
   actionButton: {
     flex: 1,
     marginHorizontal: 5,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 6,
     alignItems: "center",
   },
   actionButtonText: {
-    color: "#fff",
-    fontSize: fontSizes.FONT13,
+    color: color.primary,
+    fontSize: fontSizes.FONT12,
     fontFamily: FONT_MEDIUM,
     letterSpacing: 0.5,
   },
   callButton: {
-    backgroundColor: "#1976D2",
+    backgroundColor: color.buttonBg,
   },
   emergencyButton: {
-    backgroundColor: "#E53935",
+    backgroundColor: color.buttonBg,
   },
   cancelButton: {
-    backgroundColor: "#FF9800", // orange tone for cancel
+    backgroundColor: color.buttonBg,
   },
   midwayCancelButton: {
-    backgroundColor: "#F44336", // deeper red for ongoing cancel
+    backgroundColor: color.buttonBg,
   },
   footerNote: {
     fontFamily: FONT_REGULAR,
-    fontSize: 13,
-    color: '#999',
+    fontSize: fontSizes.FONT14,
+    color: color.lightGray,
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: PADDING_HORIZONTAL,
+    marginTop:20
   },
 
   // --- Map Markers ---
@@ -287,17 +293,17 @@ const styles = StyleSheet.create({
     color: 'white', // White text on solid background
   },
   completedMarker: {
-    backgroundColor: COLOR_SECONDARY,
+    backgroundColor: color.primary,
     width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: 'white',
+    borderColor: color.border,
   },
   completedMarkerText: {
-    color: 'white',
+    color: color.primaryText,
     fontSize: 20,
     fontFamily: FONT_MEDIUM,
   },
@@ -320,14 +326,64 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: fontSizes.FONT12,
-    color: SECONDARY_TEXT,
+    color: color.primaryText,
     marginBottom: 2,
     fontFamily: FONT_REGULAR, // Regular weight for labels
   },
   detailText: {
     fontSize: fontSizes.FONT15,
-    color: HEADING_TEXT,
+    color: color.primaryGray,
     fontFamily: FONT_MEDIUM, // Medium weight for content
+  },
+  ratingContainer: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: color.border,
+    marginBottom: 5,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  ratingTitle: {
+    fontSize: fontSizes.FONT16,
+    marginBottom: 8,
+    color: color.primaryText,
+    fontFamily: 'TT-Octosquares-Medium'
+  },
+  starContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginVertical: 8,
+  },
+  submitButton: {
+    marginTop: 12,
+    backgroundColor: "#f73939",
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  submitButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  thankYouText: {
+    fontSize: fontSizes.FONT16,
+    marginBottom: 8,
+    color: color.primaryGray,
+    fontFamily: 'TT-Octosquares-Medium'
+  },
+  ratingSummary: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 15,
+    backgroundColor: color.subPrimary,
+    borderWidth: 1,
+    borderColor: color.border,
   },
 });
 

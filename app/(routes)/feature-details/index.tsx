@@ -1,10 +1,9 @@
 import { View, Text } from 'react-native'
 import React from 'react'
-import RidePlanScreen from '@/screens/rideplan/rideplan.screen'
+import FeatureDetails from '@/screens/feature-details/feature-details.screen'
 
 export default function index() {
     return (
-    
-        <RidePlanScreen />
+        <FeatureDetails />
     )
 }

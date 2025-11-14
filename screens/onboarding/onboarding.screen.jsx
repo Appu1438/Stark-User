@@ -24,43 +24,46 @@ const { width, height } = Dimensions.get('window');
 export default function OnBoardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-   useFocusEffect(
-          useCallback(() => {
-              const onBackPress = () => {
-                  Alert.alert(
-                      "Exit App",
-                      "Are you sure you want to exit?",
-                      [
-                          { text: "Cancel", style: "cancel" },
-                          { text: "Exit", onPress: () => BackHandler.exitApp() },
-                      ],
-                      { cancelable: true }
-                  );
-                  return true; // Prevent default back behavior
-              };
-  
-              if (Platform.OS === "android") {
-                  const subscription = BackHandler.addEventListener(
-                      "hardwareBackPress",
-                      onBackPress
-                  );
-  
-                  // Cleanup on unmount
-                  return () => subscription.remove();
-              }
-          }, [])
-      );
-  
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        Alert.alert(
+          "Exit App",
+          "Are you sure you want to exit?",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Exit", onPress: () => BackHandler.exitApp() },
+          ],
+          { cancelable: true }
+        );
+        return true; // Prevent default back behavior
+      };
+
+      if (Platform.OS === "android") {
+        const subscription = BackHandler.addEventListener(
+          "hardwareBackPress",
+          onBackPress
+        );
+
+        // Cleanup on unmount
+        return () => subscription.remove();
+      }
+    }, [])
+  );
+
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.whiteColor }}>
+    <View style={{
+      flex: 1,
+      // backgroundColor: color.whiteColor 
+    }}>
       <Carousel
         width={width}
         height={height}
         data={slides}
         scrollAnimationDuration={1500}
         autoPlay={false}
-        pagingEnabled 
+        pagingEnabled
         onSnapToItem={(index) => setCurrentIndex(index)}
         mode="parallax" // or try "stack" / "horizontal-stack" / "vertical-stack"
         modeConfig={{
@@ -100,7 +103,7 @@ export default function OnBoardingScreen() {
                   style={styles.backArrow}
                   onPress={() => router.push('/(routes)/login')}
                 >
-                  <BackArrow colors={color.whiteColor} width={21} height={21} />
+                  <BackArrow colors={color.primary} width={21} height={21} />
                 </TouchableOpacity>
               </ImageBackground>
             </View>

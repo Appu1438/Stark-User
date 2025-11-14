@@ -10,6 +10,7 @@ const styles = StyleSheet.create({
 
     slideContainer: {
         ...commonStyles.flexContainer,
+        
 
     },
     imageBackground: {
@@ -45,13 +46,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignSelf: 'center',
         bottom: 0,
-        position: 'absolute'
+        position: 'absolute',
+        color:color.primary
 
     },
     img: {
         width: '100%',
         height: windowHeight(180),
-        marginBottom: windowHeight(45)
+        marginBottom: windowHeight(45),
     },
     activeStyle: {
         width: '7%',

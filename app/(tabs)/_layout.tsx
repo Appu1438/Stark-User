@@ -25,11 +25,8 @@ export default function _layout({ children }: { children: ReactNode }) {
               } else {
                 iconName = <HomeLight />;
               }
-            } else if (route.name === "services/index") {
-              iconName = (
-                <Category colors={focused ? color.buttonBg : "#8F8F8F"} />
-              );
-            } else if (route.name === "history/index") {
+            }
+            else if (route.name === "history/index") {
               if (focused) {
                 iconName = <CarPrimary fill={color.buttonBg} />;
               } else {
@@ -47,12 +44,7 @@ export default function _layout({ children }: { children: ReactNode }) {
         };
       }}
     >
-      <Tabs.Screen name="home/index"
-        options={{
-          gestureEnabled: false,   // disables swipe back
-          headerLeft: () => null,   // removes back button
-        }} />
-      <Tabs.Screen name="services/index" />
+      <Tabs.Screen name="home/index" />
       <Tabs.Screen name="history/index" />
       <Tabs.Screen name="profile/index" />
     </Tabs>

@@ -45,6 +45,13 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // ✅ Device mismatch
+    if (error.response?.status === 470) {
+      console.log('Not Approved Logging Out')
+      await logout();
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // Queue the request while token is refreshing
@@ -58,7 +65,8 @@ axiosInstance.interceptors.response.use(
 
       try {
         const newAccessToken = await refreshAccessToken();
-        await AsyncStorage.setItem("accessToken", newAccessToken);
+        
+        // await AsyncStorage.setItem("accessToken", newAccessToken);
 
         processQueue(null, newAccessToken);
 

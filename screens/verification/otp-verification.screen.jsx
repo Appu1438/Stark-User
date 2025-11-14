@@ -73,7 +73,7 @@ export default function OtpVerificationScreen() {
       }
     } catch (error) {
       toast.show(
-        "Something went wrong! Please recheck your OTP!",
+        error.response.data.message,
         { type: "danger", placement: "bottom" }
       );
       console.error("OTP verification error:", error);
@@ -96,7 +96,7 @@ export default function OtpVerificationScreen() {
             handleTextChange={(code) => setOtp(code)}
             inputCount={4}
             textInputStyle={style.otpTextInput}
-            tintColor={color.subtitle}
+            tintColor={color.primaryText}
             autoFocus={false}
           />
           <View style={[external.mt_30]}>
@@ -119,7 +119,7 @@ export default function OtpVerificationScreen() {
               }]}>Not Received yet?</Text>
               <TouchableOpacity>
                 <Text style={[style.signUpText, {
-                  color: "#000", fontFamily: 'TT-Octosquares-Medium'
+                  fontFamily: 'TT-Octosquares-Medium'
                 }]}>
                   Resend it
                 </Text>

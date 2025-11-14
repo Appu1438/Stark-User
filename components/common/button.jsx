@@ -30,7 +30,7 @@ const Button = ({
         style={[
           commonStyles.extraBold,
           {
-            color: textColor || color.whiteColor, fontFamily: 'TT-Octosquares-Medium'
+            color: textColor || color.primary, fontFamily: 'TT-Octosquares-Medium'
           },
         ]}
       >
@@ -47,6 +47,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     ...external.ai_center,
     ...external.js_center,
+    alignItems:'center',
+    justifyContent:'center'
   },
 });
 

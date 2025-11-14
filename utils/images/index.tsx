@@ -20,6 +20,7 @@ export type images = {
   hurray: ImageSourcePropType;
   sad: ImageSourcePropType;
   rideCard: ImageSourcePropType;
+  mapMarker: ImageSourcePropType;
 };
 
 const Images: images = {
@@ -38,9 +39,11 @@ const Images: images = {
   destinationDark: require("../../assets/images/onBoarding/destinationDark.png"),
   bgDarkOnboard: require("../../assets/images/onBoarding/bgDarkOnboard.png"),
   authBgDark: require("../../assets/images/authImage/authBgDark.png"),
-  bgOnboarding: require("../../assets/images/onBoarding/bgOnboarding.png"),
+  bgOnboarding: require("../../assets/images/onBoarding/bgDarkOnboard.png"),
   sad: require("../../assets/images/modal/sad.png"),
   hurray: require("../../assets/images/modal/hurray.png"),
-  rideCard:require("../../assets/images/homeScreenImage/offerBg.png")
+  rideCard: require("../../assets/images/homeScreenImage/offerBg.png"),
+  mapMarker: require("../../assets/images/rideScreen/marker.png"),
+
 };
 export default Images;

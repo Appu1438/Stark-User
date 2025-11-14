@@ -1,3 +1,4 @@
+import color from "@/themes/app.colors";
 import * as React from "react";
 import Svg, { G, Path } from "react-native-svg";
 export function LeftArrow() {
@@ -10,7 +11,7 @@ export function LeftArrow() {
     >
       <G
         transform="translate(0.000000,512.000000) scale(0.10000,-0.10000)"
-        fill="#000"
+        fill={color.primaryText}
         strokeWidth={"100"}
       >
         <Path

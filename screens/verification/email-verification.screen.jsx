@@ -87,7 +87,7 @@ export default function EmailVerificationScreen() {
             handleTextChange={(code) => setOtp(code)}
             inputCount={4}
             textInputStyle={style.otpTextInput}
-            tintColor={color.subtitle}
+            tintColor={color.primaryText}
             autoFocus={false}
           />
           <View style={[external.mt_30]}>
@@ -109,7 +109,7 @@ export default function EmailVerificationScreen() {
                 fontFamily: 'TT-Octosquares-Medium',
               }]}>Not Received yet?</Text>
               <TouchableOpacity>
-                <Text style={[style.signUpText, { color: "#000" }]}>
+                <Text style={[style.signUpText]}>
                   Resend it
                 </Text>
               </TouchableOpacity>

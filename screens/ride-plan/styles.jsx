@@ -8,7 +8,7 @@ import { StyleSheet } from "react-native";
 const styles = StyleSheet.create({
     container: {
         ...commonStyles.shadowContainer,
-        backgroundColor: color.whiteColor,
+        backgroundColor: color.subPrimary,
         paddingHorizontal: windowHeight(15),
         paddingVertical: windowHeight(26),
         borderStartStartRadius: windowHeight(16),
@@ -36,6 +36,41 @@ const styles = StyleSheet.create({
         ...external.as_center,
         ...external.mt_50,
         resizeMode: "contain",
+    },
+    vehicleIcon: {
+        width: 45,
+        height: 45,
+        resizeMode: 'contain',
+        // Note: The rotation transform is still applied inline above.
+    },
+
+    // 🚩 Custom Destination Pin (A clean, solid pin)
+    destinationPinContainer: {
+        width: 20,
+        height: 20,
+        backgroundColor: '#FF0057', // High-contrast Red/Pink
+        borderRadius: 10,
+        borderWidth: 3,
+        borderColor: '#fff', // White border for pop
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    // Optional inner dot for the destination
+    destinationPinInner: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#fff',
+    },
+
+    // 🧭 Custom Pickup Dot (A clean circle with a pulse effect look)
+    pickupDot: {
+        width: 15,
+        height: 15,
+        borderRadius: 7.5,
+        backgroundColor: '#00cc00', // Solid green or primary brand color
+        borderWidth: 2,
+        borderColor: '#fff',
     },
 });
 

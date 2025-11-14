@@ -9,6 +9,9 @@ import { CommonActions } from '@react-navigation/native';
  */
 export const logout = async () => {
     try {
+
+        console.log('logout')
+
         // Call backend logout route to clear cookie & DB token
         await axiosInstance.post("/logout", {}, { withCredentials: true });
 
@@ -38,13 +41,13 @@ export const refreshAccessToken = async () => {
             await AsyncStorage.setItem("accessToken", res.data.accessToken);
 
             // Update axiosInstance with new token
-            //   axiosInstance.defaults.headers.Authorization = `Bearer ${res.data.accessToken}`;
+            // axiosInstance.defaults.headers.Authorization = `Bearer ${res.data.accessToken}`;
 
             return res.data.accessToken;
         }
         throw new Error("No access token returned");
     } catch (error) {
-        console.log("Refresh token failed:", error.message);
+        console.log("Refresh token failed:", error);
         // If refresh fails, force logout
         await logout();
         return null;

@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { G, Path, Svg } from "react-native-svg";
 
-export default function DownArrow() {
+export default function DownArrow({ color }) {
   return (
     <Svg
       width="14"
@@ -12,8 +12,8 @@ export default function DownArrow() {
     >
       <G
         transform="translate(0.000000,512.000000) scale(0.100000,-0.100000)"
-        fill="#000000"
-        stroke="none"
+        fill={color || '#000000'}
+        stroke={color}
       >
         <Path
           d="M355 4034 c-43 -22 -313 -292 -336 -336 -21 -42 -24 -83 -9 -125 12

@@ -9,7 +9,7 @@ const styles = StyleSheet.create({
         paddingTop: windowHeight(30),
     },
     containerStyle: {
-        backgroundColor: color.lightGray,
+        // backgroundColor: color.lightGray,
         ...external.Pb_30,
     },
     rideContainer: {
@@ -22,6 +22,23 @@ const styles = StyleSheet.create({
         fontSize: fontSizes.FONT25,
         fontFamily: 'TT-Octosquares-Medium',
         fontWeight: "600",
+    },
+    stickySearchWrapper: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 20,
+        paddingTop: windowHeight(40),
+        paddingBottom: 5,
+        backgroundColor: color.subPrimary,
+        zIndex: 999,
+    },
+    logoText: {
+        fontFamily: "TT-Octosquares-Medium",
+        fontSize: fontSizes.FONT25,
+        color: color.primaryText,
+        marginBottom: 0,
     },
 });
 

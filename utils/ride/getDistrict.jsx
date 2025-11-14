@@ -30,6 +30,7 @@ export const getDistrict = async (latitude, longitude, setDistrict) => {
 
         if (typeof setDistrict === "function") {
             setDistrict(districtName);
+            console.log(districtName)
         }
 
         return districtName;

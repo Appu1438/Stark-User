@@ -21,6 +21,9 @@ export type images = {
   sad: ImageSourcePropType;
   rideCard: ImageSourcePropType;
   mapMarker: ImageSourcePropType;
+  mapCancelMarker: ImageSourcePropType;
+  mapPickupMarker: ImageSourcePropType;
+  mapDropMarker:ImageSourcePropType
 };
 
 const Images: images = {
@@ -43,7 +46,9 @@ const Images: images = {
   sad: require("../../assets/images/modal/sad.png"),
   hurray: require("../../assets/images/modal/hurray.png"),
   rideCard: require("../../assets/images/homeScreenImage/offerBg.png"),
-  mapMarker: require("../../assets/images/rideScreen/marker.png"),
-
+  mapMarker: require("../../assets/images/markers/marker.png"),
+  mapCancelMarker: require("../../assets/images/markers/cancelledMarker.png"),
+  mapPickupMarker: require("../../assets/images/markers/pickupMarker.png"),
+  mapDropMarker: require("../../assets/images/markers/dropMarker.png"),
 };
 export default Images;

@@ -146,77 +146,48 @@ export default function Profile() {
       </LinearGradient>
 
       {/* ---------- ACCOUNT INFO ---------- */}
-      <View style={{ marginTop: 40, paddingHorizontal: windowWidth(25) }}>
-        <Text
-          style={{
-            fontSize: fontSizes.FONT20,
-            color: color.primaryText,
-            fontFamily: "TT-Octosquares-Medium",
-            marginBottom: 12,
-          }}
-        >
-          Account Details
-        </Text>
-
+      <ProfileSection title="Account Details">
         <InfoRow icon="person-outline" label="Full Name" value={user.name || "-"} />
         <InfoRow icon="mail-outline" label="Email" value={user.email || "-"} />
-        <InfoRow
-          icon="call-outline"
-          label="Phone"
-          value={user.phone_number || "-"}
-          showDivider={false}
+        <InfoRow icon="call-outline" label="Phone" value={user.phone_number || "-"} showDivider={false} />
+      </ProfileSection>
+
+      {/* ---------- SHORTCUTS ---------- */}
+      <ProfileSection title="Your Shortcuts">
+        <MenuItem
+          icon="heart-outline"
+          label="Saved Places"
+          onPress={() => router.push("/(routes)/profile/saved-places")}
         />
-      </View>
+      </ProfileSection>
 
       {/* ---------- SUPPORT SECTION ---------- */}
-      <View style={{ marginTop: 40, paddingHorizontal: windowWidth(25) }}>
-        <Text
-          style={{
-            fontSize: fontSizes.FONT20,
-            color: color.primaryText,
-            fontFamily: "TT-Octosquares-Medium",
-            marginBottom: 12,
-          }}
-        >
-          Support & Help
-        </Text>
-
+      <ProfileSection title="Support & Help">
         <MenuItem
           icon="help-circle-outline"
           label="Help & Support"
-          onPress={() => router.push("/(routes)/help-support")}
+          onPress={() => router.push("/(routes)/profile/help-support")}
         />
         <MenuItem
           icon="alert-circle-outline"
           label="Register Complaint"
-          onPress={() => router.push("/(routes)/complaints")}
+          onPress={() => router.push("/(routes)/profile/complaints")}
         />
-      </View>
+      </ProfileSection>
 
       {/* ---------- LEGAL SECTION ---------- */}
-      <View style={{ marginTop: 40, paddingHorizontal: windowWidth(25) }}>
-        <Text
-          style={{
-            fontSize: fontSizes.FONT20,
-            color: color.primaryText,
-            fontFamily: "TT-Octosquares-Medium",
-            marginBottom: 12,
-          }}
-        >
-          App Information
-        </Text>
-
+      <ProfileSection title="App Information">
         <MenuItem
           icon="document-text-outline"
           label="Legal & Policies"
           onPress={() => router.push("/(routes)/legal")}
         />
-      </View>
+      </ProfileSection>
 
       {/* ---------- LOGOUT ---------- */}
-      <View style={{ marginTop: 50, paddingHorizontal: windowWidth(25) }}>
+      <ProfileSection title="">
         <Button title="Log Out" onPress={handleLogout} />
-      </View>
+      </ProfileSection>
 
       <View style={{ height: 60 }} />
     </ScrollView>
@@ -321,4 +292,20 @@ const MenuItem = ({ icon, label, onPress }) => (
     </View>
     <Ionicons name="chevron-forward-outline" size={20} color="#999" />
   </TouchableOpacity>
+);
+
+const ProfileSection = ({ title, children }) => (
+  <View style={{ marginTop: 40, paddingHorizontal: windowWidth(25) }}>
+    <Text
+      style={{
+        fontSize: fontSizes.FONT20,
+        color: color.primaryText,
+        fontFamily: "TT-Octosquares-Medium",
+        marginBottom: 12,
+      }}
+    >
+      {title}
+    </Text>
+    {children}
+  </View>
 );

@@ -22,6 +22,27 @@ export const slides = [
   },
 ];
 
+export const CAB_FEATURES = {
+  Hatchback: [
+    "Budget friendly",
+    "Ideal for short city rides",
+    "Fits 4 passengers",
+    "Compact & easy in traffic"
+  ],
+  Sedan: [
+    "Comfortable for long rides",
+    "Fits 4 passengers",
+    "Spacious legroom",
+    "Large boot space"
+  ],
+  Suv: [
+    "Premium & spacious",
+    "Fits 6–7 passengers",
+    "Great for families",
+    "High luggage capacity"
+  ]
+};
+
 
 export const CAB_TYPES = [
   {

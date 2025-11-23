@@ -3,7 +3,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import color from "@/themes/app.colors";
 import { fontSizes } from "@/themes/app.constant";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { SlideInUp , SlideInDown} from "react-native-reanimated";
+import Animated, { SlideInUp, SlideInDown, SlideOutDown } from "react-native-reanimated";
 
 
 
@@ -15,6 +15,7 @@ export default function FeatureDetails() {
   return (
     <Animated.View
       entering={SlideInUp.duration(1000)}
+      exiting={SlideOutDown.duration(1000)}
       style={{ flex: 1 }}
     >
       <View style={{ flex: 1, backgroundColor: color.primary }}>
@@ -26,6 +27,23 @@ export default function FeatureDetails() {
         >
           {/* HERO IMAGE */}
           <View style={{ width: "100%", height: screenHeight * 0.38 }}>
+
+            {/* BACK BUTTON */}
+            <Pressable
+              onPress={() => router.back()}
+              style={{
+                position: "absolute",
+                top: 50,       // adjust based on notch
+                left: 20,
+                padding: 10,
+                backgroundColor: color.buttonBg,
+                borderRadius: 30,
+                zIndex: 1000
+              }}
+            >
+              <Text style={{ color: color.primary, fontSize: 20 }}>←</Text>
+            </Pressable>
+
             <Image
               source={image}
               style={{
@@ -69,13 +87,15 @@ export default function FeatureDetails() {
               {quote}
             </Text>
           </View>
+
+
         </ScrollView>
 
         {/* FIXED BOTTOM BUTTON */}
         <View
           style={{
             position: "absolute",
-            bottom: 0,
+            bottom: 20,
             left: 0,
             right: 0,
             padding: 20,

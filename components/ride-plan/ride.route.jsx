@@ -17,7 +17,8 @@ export default function RideRoute({
   destLocationName,
   locationSelected,
   driverLists,
-  mapRef
+  mapRef,
+  expanded
 }) {
   const strokeColor = Platform.select({
     ios: color.strokeColor,
@@ -88,15 +89,17 @@ export default function RideRoute({
         onLayout={updateLabelPoints}
         provider={PROVIDER_GOOGLE}
         customMapStyle={customMapStyle}
-        pitchEnabled={false}
-        rotateEnabled={false}
+        scrollEnabled={!expanded}
+        rotateEnabled={!expanded}
+        pitchEnabled={!expanded}
+        zoomEnabled={!expanded}
       >
         {/* keep your routes / drivers / markers (icon-only) here */}
 
         {currentLocation && (
           <Marker coordinate={currentLocation} anchor={{ x: 0.5, y: 1 }}>
             <Image
-              source={Images.mapMarker}
+              source={Images.mapPickupMarker}
               style={{
                 width: windowWidth(35),
                 height: windowHeight(35),
@@ -110,7 +113,7 @@ export default function RideRoute({
         {marker && (
           <Marker coordinate={marker} anchor={{ x: 0.5, y: 1 }}>
             <Image
-              source={Images.mapMarker}
+              source={Images.mapDropMarker}
               style={{
                 width: windowWidth(35),
                 height: windowHeight(35),

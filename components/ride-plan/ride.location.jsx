@@ -1,238 +1,606 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, Pressable, Dimensions } from "react-native";
+import React, { useRef, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Dimensions,
+  Animated,
+  PanResponder,
+  Platform,
+  StyleSheet,
+  Keyboard,
+} from "react-native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
-import { Clock, Gps, LeftArrow, PickLocation, RightArrow, Location } from "@/utils/icons";
+import { Clock, Gps, LeftArrow, RightArrow, Location } from "@/utils/icons";
 import color from "@/themes/app.colors";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
+import { useGetUserSavedPlaces } from "@/hooks/useGetUserData";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// SNAP points per your request
+const SNAP = {
+  COLLAPSED: windowHeight(220), // Q1 value
+  HALF: Math.round(SCREEN_HEIGHT * 0.65),
+  FULL: SCREEN_HEIGHT - (Platform.OS === "ios" ? 40 : 40),
+};
 
 export default function RideLocationSelector({
   router,
   currentLocation,
   marker,
   setlocationSelected,
-  currentLocationName,
-  destLocationName,
+  currentLocationName = "Current location",
+  destLocationName = "Where to?",
   fromSearchInputRef,
   toSearchInputRef,
   setFromPlaces,
   setPlaces,
-  fromPlaces,
-  places,
+  fromPlaces = [],
+  places = [],
   handleFromPlaceSelect,
   handlePlaceSelect,
   setkeyboardAvoidingHeight,
   setQuery,
   setFromQuery,
   fromQuery,
-  query
+  query,
+  isFindingLocation
 }) {
+  // saved places
+  const { loading: savedLoading, savedPlaces = [] } = useGetUserSavedPlaces();
+
+  // state: sheetAnim (0..1) controls height between COLLAPSED and FULL
+  const sheetAnim = useRef(new Animated.Value(0)).current; // 0 collapsed, 1 full
+  const [expanded, setExpanded] = useState(false); // full-screen?
+  const [isPanning, setIsPanning] = useState(false); // block inner scroll while pan
+
+  // map sheetAnim to height and border radius (no translateY)
+  const sheetHeight = sheetAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [SNAP.COLLAPSED, SNAP.FULL],
+    extrapolate: "clamp",
+  });
+  const sheetBorderRadius = sheetAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0],
+    extrapolate: "clamp",
+  });
+
+  // snap function same logic as RideOptions
+  const snapTo = (pointKey) => {
+    let toVal = 0;
+    if (pointKey === "COLLAPSED"){
+       toVal = 0;
+       Keyboard.dismiss()
+    }
+    else if (pointKey === "HALF") {
+      const frac = (SNAP.HALF - SNAP.COLLAPSED) / (SNAP.FULL - SNAP.COLLAPSED);
+      toVal = frac;
+    } else toVal = 1;
+
+    Animated.spring(sheetAnim, {
+      toValue: toVal,
+      useNativeDriver: false,
+      stiffness: 160,
+      damping: 18,
+      mass: 1,
+      overshootClamping: true,
+    }).start(() => {
+      setExpanded(toVal >= 0.95);
+    });
+  };
+
+  // initialize collapsed
+  useEffect(() => {
+    sheetAnim.setValue(0);
+    setExpanded(false);
+  }, []);
+
+  // PanResponder: we DO NOT move sheet while dragging; only compute on release and snap
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6,
+      onPanResponderGrant: () => {
+        setIsPanning(true);
+      },
+      onPanResponderMove: () => {
+        // purposely do nothing so sheet doesn't follow finger
+      },
+      onPanResponderRelease: (_, gesture) => {
+        const { dy, vy } = gesture;
+
+        // determine projected height based on current sheetAnim value
+        sheetAnim.stopAnimation((val) => {
+          const currHeight =
+            SNAP.COLLAPSED + (SNAP.FULL - SNAP.COLLAPSED) * val;
+          // project: note dy > 0 means drag down, so subtract dy to go up
+          const projected = currHeight - dy - vy * 200;
+
+          // choose nearest snap
+          const candidates = [
+            { key: "COLLAPSED", diff: Math.abs(projected - SNAP.COLLAPSED) },
+            { key: "HALF", diff: Math.abs(projected - SNAP.HALF) },
+            { key: "FULL", diff: Math.abs(projected - SNAP.FULL) },
+          ].sort((a, b) => a.diff - b.diff);
+
+          snapTo(candidates[0].key);
+        });
+
+        // small delay to avoid immediate scroll toggling
+        setTimeout(() => setIsPanning(false), 50);
+      },
+      onPanResponderTerminate: () => {
+        // cancelled — ensure we stop panning
+        setIsPanning(false);
+      },
+    })
+  ).current;
+
+  // When input focuses — expand
+  const handleFocusFrom = () => {
+    snapTo("HALF");
+  };
+  const handleFocusTo = () => {
+    snapTo("HALF");
+  };
+
+  // toggle behavior for handle
+  const toggleHandle = () =>
+    sheetAnim.stopAnimation((val) => {
+      if (val < 0.5) snapTo("FULL");
+      else snapTo("COLLAPSED");
+    });
+
+  // helper render saved place row
+  const renderSavedPlace = (place, idx) => (
+    <Pressable
+      key={`saved-${idx}`}
+      style={styles.resultRow}
+      onPress={() => {
+        handlePlaceSelect(
+          place.placeId || place.place_id || place.id,
+          place.address || place.name
+        );
+        snapTo("COLLAPSED");
+      }}
+    >
+      <Location colors={color.primaryText} />
+      <View style={{ marginLeft: 12, flex: 1 }}>
+        <Text style={styles.resultMain}>{place.label || place.description}</Text>
+        <Text style={styles.resultSub}>{place.address || place.vicinity || ""}</Text>
+      </View>
+    </Pressable>
+  );
+
+  // Should we show saved places? hide when typing in either input
+  const isTyping = (!isFindingLocation) && (
+    (fromQuery && fromQuery.trim().length > 0) ||
+    (query && query.trim().length > 0)
+  );
+
+  // Safe GooglePlacesAutocomplete styles (required keys present)
+  const gpStyles = {
+    container: { flex: 1 },
+    textInputContainer: { width: "100%", backgroundColor: "transparent", padding: 0, margin: 0 },
+    textInput: { height: 40, color: color.primaryText, fontSize: fontSizes.FONT15, fontFamily: "TT-Octosquares-Medium", backgroundColor: "transparent", },
+    listView: { backgroundColor: color.subPrimary },
+    row: { padding: 10, borderBottomWidth: 0 },
+    separator: { height: 0.5, backgroundColor: color.primaryText },
+    description: { color: color.primaryText },
+    loader: { color: color.primaryText },
+  };
+
   return (
-    <>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <LeftArrow />
-        </TouchableOpacity>
-        <Text style={{
-          margin: 'auto',
-          fontSize:fontSizes.FONT20,
-          fontWeight: '600',
-          fontFamily: 'TT-Octosquares-Medium',
-          color: color.primaryText
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: sheetHeight,
+          borderTopLeftRadius: sheetBorderRadius,
+          borderTopRightRadius: sheetBorderRadius,
+          backgroundColor: color.subPrimary,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: "#1d1d1d",
+        },
+      ]}
+      {...panResponder.panHandlers}
+    >
+      {/* Header / handle */}
+      <View style={styles.handleWrap}>
+        <Pressable onPress={toggleHandle}>
+          <View style={styles.handle} />
+        </Pressable>
 
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => router.back()} style={styles.headerLeft}>
+            <LeftArrow />
+          </Pressable>
 
-        }}>
-          Plan Your Ride
-        </Text>
-        {currentLocation && marker && (
-          <TouchableOpacity onPress={() => setlocationSelected(true)}>
+          <Text style={styles.headerTitle}>Plan Your Ride</Text>
+
+          <Pressable
+            onPress={() => { if (currentLocation && marker) setlocationSelected(true); }}
+            style={styles.headerRight}
+          >
             <RightArrow iconColor={color.primaryText} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={{
-        width: windowWidth(200),
-        height: windowHeight(28),
-        borderRadius: 20,
-        backgroundColor: color.buttonBg,
-        alignItems: "center",
-        justifyContent: 'center',
-        marginVertical: windowHeight(18)
-      }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Clock />
-          <Text style={{
-            fontSize: fontSizes.FONT15,
-            paddingHorizontal: 8,
-            fontFamily: 'TT-Octosquares-Medium'
-
-          }}>
-            Pick-up Now
-          </Text>
+          </Pressable>
         </View>
       </View>
 
-      <View style={{
-        borderWidth: 2, borderColor: color.border, borderRadius: 15,
-        marginBottom: windowHeight(15),
-        paddingHorizontal: windowWidth(15),
-        paddingVertical: windowHeight(10)
-      }}>
-        <View style={{ flexDirection: 'row' }}>
-          <Location colors={color.primaryGray} />
-          <View style={{
-            borderBottomWidth: 1,
-            borderBottomColor: color.primaryGray,
-            width: Dimensions.get('window').width * 1 - 110,
-            marginLeft: 5,
-            height: windowHeight(30),
-          }}>
-            <GooglePlacesAutocomplete
-              ref={fromSearchInputRef}
-              placeholder={currentLocationName}
-              onPress={(data) => {
-                setFromPlaces([{ ...data }]);
-              }}
-              query={{
-                key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
-                language: 'en',
-              }}
-              styles={{
-                textInputContainer: {
-                  width: '100%',
-                  // backgroundColor:color.red
-                },
-                textInput: {
-                  height: 25,
-                  color: color.primaryText,
-                  fontSize: 13,
-                  fontFamily: 'TT-Octosquares-Medium',
-                  backgroundColor: color.subPrimary
-                },
-
-              }}
-              textInputProps={{
-                onChangeText: setFromQuery,
-                value: fromQuery,
-                onFocus: () => setkeyboardAvoidingHeight(true),
-                onBlur: () => setkeyboardAvoidingHeight(false),
-                placeholderTextColor: color.primaryText
-              }}
-              fetchDetails={true}
-              debounce={200}
-              predefinedPlaces={[]}
-            />
+      {/* body */}
+      <View style={styles.body}>
+        <View style={styles.pickupPill}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Clock />
+            <Text style={styles.pickupText}>Pick-up Now</Text>
           </View>
         </View>
 
-        <View style={{
-          flexDirection: 'row',
-          paddingVertical: 12,
-        }}>
-          <Gps colors={color.primaryGray} />
-          <View style={{
-            marginLeft: 5,
-            width: Dimensions.get('window').width * 1 - 110,
-          }}>
-            <GooglePlacesAutocomplete
-              ref={toSearchInputRef}
-              placeholder={destLocationName}
-              onPress={(data) => {
-                setPlaces([{ ...data }]);
-              }}
-              query={{
-                key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
-                language: 'en',
-              }}
-              styles={{
-                textInputContainer: { width: '100%' },
-                textInput: {
-                  height: 25,
-                  color: color.primaryText,
-                  fontSize: 13,
-                  fontFamily: 'TT-Octosquares-Medium',
-                  backgroundColor: color.subPrimary
-                },
-              }}
-              textInputProps={{
-                onChangeText: setQuery,
-                value: query,
-                onFocus: () => setkeyboardAvoidingHeight(true),
-                onBlur: () => setkeyboardAvoidingHeight(false),
-                placeholderTextColor: color.primaryText,
-              }}
-              fetchDetails={true}
-              debounce={200}
-              predefinedPlaces={[]}
-
-            />
-          </View>
-        </View>
-      </View>
-
-      <ScrollView style={{ maxHeight: windowHeight(150) }} keyboardShouldPersistTaps="handled">
-        {fromPlaces?.map((place, index) => (
-          <Pressable
-            key={index}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginBottom: windowHeight(10),
-              paddingVertical: 8,
-              paddingHorizontal: 10,
-              borderRadius: 8,
-              marginTop: 4,
-              borderBottomWidth: 1,
-              borderBottomColor: color.primaryGray,
-              // width: Dimensions.get('window').width * 1 - 110,
-            }}
-            onPress={() => handleFromPlaceSelect(place.place_id, place.description)}
-          >
+        {/* Search Inputs */}
+        <View
+          style={{
+            borderWidth: 2,
+            borderColor: color.border,
+            borderRadius: 15,
+            marginBottom: windowHeight(15),
+            paddingHorizontal: windowWidth(15),
+            paddingVertical: windowHeight(10),
+          }}
+        >
+          {/* FROM LOCATION */}
+          <View style={{ flexDirection: "row" }}>
             <Location colors={color.primaryGray} />
-            <Text style={{
-              paddingLeft: 15,
-              fontSize: fontSizes.FONT16,
-              flexShrink: 1,
-              color: color.primaryText,
-              fontFamily: 'TT-Octosquares-Medium'
-            }}>
-              {place.description || 'Unknown location'}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
 
-      <ScrollView style={{ maxHeight: windowHeight(150) }} keyboardShouldPersistTaps="handled">
-        {places?.map((place, index) => (
-          <Pressable
-            key={index}
+            <View
+              style={{
+                borderBottomWidth: 1,
+                borderBottomColor: color.primaryGray,
+                width: Dimensions.get("window").width - 110,
+                marginLeft: 5,
+                height: windowHeight(30),
+              }}
+            >
+              <GooglePlacesAutocomplete
+                ref={fromSearchInputRef}
+                placeholder={isFindingLocation ? "Fetching location..." : currentLocationName}
+                onPress={(data) => {
+                  if (isFindingLocation) return;        // 🚫 ignore presses
+                  setFromPlaces([{ ...data }]);
+                }}
+                query={{
+                  key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
+                  language: "en",
+                }}
+                textInputProps={{
+                  onChangeText: (text) => {
+                    if (!isFindingLocation) setFromQuery(text);   // 🚫 disable typing
+                  },
+                  editable: !isFindingLocation,                   // 🔐 disable input box
+                  value: fromQuery,
+                  onFocus: () => {
+                    if (!isFindingLocation) {
+                      // setkeyboardAvoidingHeight(true);
+                      snapTo("FULL");
+                    }
+                  },
+                  onBlur: () => {
+                    // setkeyboardAvoidingHeight(false)
+                    // , snapTo("COLLAPSED");
+
+                  },
+                  placeholderTextColor: color.primaryText,
+                }}
+                fetchDetails={!isFindingLocation}                 // 🚫 block API calls
+                styles={{
+                  textInput: {
+                    height: 30,
+                    color: isFindingLocation ? "#777" : color.primaryText, // dim color when disabled
+                    fontSize: fontSizes.FONT15,
+                    fontFamily: "TT-Octosquares-Medium",
+                    backgroundColor: color.subPrimary,
+                  },
+                }}
+                debounce={200}
+                predefinedPlaces={[]}
+              />
+            </View>
+          </View>
+
+          {/* TO LOCATION */}
+          <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginBottom: windowHeight(10),
-              paddingVertical: 8,
-              paddingHorizontal: 10,
-              borderRadius: 8,
-              marginTop: 4,
-              borderBottomWidth: 1,
-              borderBottomColor: color.primaryGray,
+              flexDirection: "row",
+              paddingVertical: 12,
             }}
-            onPress={() => handlePlaceSelect(place.place_id, place.description)}
           >
-            <Gps colors={color.primaryText} />
-            <Text style={{
-              paddingLeft: 15,
-              fontSize: fontSizes.FONT15,
-              flexShrink: 1,
-              color: color.primaryText,
-              fontFamily: 'TT-Octosquares-Medium'
+            <Gps colors={color.primaryGray} />
 
-            }}>
-              {place.description || 'Unknown location'}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </>
+            <View
+              style={{
+                marginLeft: 5,
+                width: Dimensions.get("window").width - 110,
+              }}
+            >
+              <GooglePlacesAutocomplete
+                ref={toSearchInputRef}
+                placeholder={destLocationName}
+                onPress={(data) => {
+                  if (isFindingLocation) return;
+                  setPlaces([{ ...data }]);
+                }}
+                query={{
+                  key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
+                  language: "en",
+                }}
+                textInputProps={{
+                  onChangeText: (text) => {
+                    if (!isFindingLocation) setQuery(text);
+                  },
+                  editable: !isFindingLocation,
+                  value: query,
+                  onFocus: () => {
+                    if (!isFindingLocation) {
+                      // setkeyboardAvoidingHeight(true);
+                      snapTo("FULL");
+                    }
+                  },
+                  onBlur: () => {
+                    // setkeyboardAvoidingHeight(false)
+                    // ,snapTo("COLLAPSED");
+                  },
+                  placeholderTextColor: color.primaryText,
+                }}
+                fetchDetails={!isFindingLocation}
+                styles={{
+                  textInput: {
+                    height: 30,
+                    color: isFindingLocation ? "#777" : color.primaryText,
+                    fontSize: fontSizes.FONT15,
+                    fontFamily: "TT-Octosquares-Medium",
+                    backgroundColor: color.subPrimary,
+                  },
+                }}
+                debounce={200}
+                predefinedPlaces={[]}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Content: saved places & suggestions.
+            - inner ScrollView is enabled only when sheet is FULL (expanded)
+            - when user is typing, hide saved places (isTyping)
+        */}
+        <Animated.ScrollView
+          style={styles.resultsContainer}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          // scrollEnabled={expanded && !isPanning}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={() => {
+            if (!expanded) snapTo("HALF");
+          }}
+        >
+          {/* Saved Places */}
+          {!isTyping && !isFindingLocation && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Saved Places</Text>
+                <Text style={styles.sectionSub}>{savedLoading ? "Loading..." : `${savedPlaces.length} items`}</Text>
+              </View>
+
+              {savedPlaces.length === 0 ? (
+                <View style={styles.emptySaved}>
+                  <Text style={styles.emptyText}>No saved places yet.</Text>
+                </View>
+              ) : (
+                savedPlaces.map((p, i) => renderSavedPlace(p, i))
+              )}
+            </>
+          )}
+
+          {/* From suggestions */}
+          {fromPlaces?.length > 0 && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Pickup Suggestions</Text>
+              </View>
+
+              {fromPlaces.map((place, idx) => (
+                <Pressable
+                  key={`from-${idx}`}
+                  style={styles.resultRow}
+                  onPress={() => {
+                    console.log("📍 Selected Place:", place); // <-- LOG FULL PLACE
+
+                    handleFromPlaceSelect(
+                      place.place_id || place.placeId || place?.result?.place_id,
+                      place.description || place?.description || place?.result?.formatted_address
+                    );
+                    snapTo("COLLAPSED");
+                  }}
+                >
+                  <Location colors={color.primaryText} />
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text style={styles.resultMain}>{place.description || place?.result?.formatted_address}</Text>
+                    <Text style={styles.resultSub}>{place.structured_formatting?.secondary_text || ""}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </>
+          )}
+
+          {/* To suggestions */}
+          {places?.length > 0 && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Destination Suggestions</Text>
+              </View>
+
+              {places.map((place, idx) => (
+                <Pressable
+                  key={`to-${idx}`}
+                  style={styles.resultRow}
+                  onPress={() => {
+                    console.log("📍 Selected Place:", place); // <-- LOG FULL PLACE
+                    handlePlaceSelect(
+                      place.place_id || place.placeId || place?.result?.place_id,
+                      place.description || place?.description || place?.result?.formatted_address
+                    );
+                    snapTo("COLLAPSED");
+                  }}
+                >
+                  <Gps colors={color.primaryText} />
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text style={styles.resultMain}>{place.description || place?.result?.formatted_address}</Text>
+                    <Text style={styles.resultSub}>{place.structured_formatting?.secondary_text || ""}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </>
+          )}
+        </Animated.ScrollView>
+      </View>
+    </Animated.View>
   );
 }
+
+// styles (kept same as you provided; no layout changes)
+const styles = StyleSheet.create({
+  handleWrap: {
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: "transparent",
+  },
+  handle: {
+    width: 40,
+    height: 6,
+    borderRadius: 6,
+    backgroundColor: "#333",
+    alignSelf: "center",
+    marginBottom: 8,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    justifyContent: "space-between",
+  },
+  headerLeft: { padding: 8 },
+  headerRight: { padding: 8 },
+  headerTitle: {
+    fontSize: fontSizes.FONT20,
+    fontWeight: "600",
+    color: color.primaryText,
+    fontFamily: "TT-Octosquares-Medium",
+  },
+
+  body: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+
+  pickupPill: {
+    width: windowWidth(220),
+    height: windowHeight(34),
+    borderRadius: 22,
+    backgroundColor: color.buttonBg,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginVertical: windowHeight(12),
+    alignSelf: 'flex-start'
+  },
+  pickupText: {
+    fontSize: fontSizes.FONT15,
+    paddingHorizontal: 8,
+    fontFamily: "TT-Octosquares-Medium",
+    color: color.primary,
+  },
+
+  inputsCard: {
+    borderWidth: 2,
+    borderColor: color.border,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  autocompleteWrap: {
+    flex: 1,
+    marginLeft: 8,
+    height: 40,
+    justifyContent: "center",
+  },
+
+  resultsContainer: {
+    flex: 1,
+    marginTop: 6,
+  },
+
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 2,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  sectionTitle: {
+    color: color.primaryText,
+    fontSize: fontSizes.FONT16,
+    fontFamily: "TT-Octosquares-Medium",
+  },
+  sectionSub: {
+    color: color.primaryGray,
+    fontSize: fontSizes.FONT12,
+    fontFamily: "TT-Octosquares-Medium",
+
+  },
+
+  resultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: color.primaryGray,
+  },
+  resultMain: {
+    color: color.primaryText,
+    fontSize: fontSizes.FONT15,
+    fontFamily: "TT-Octosquares-Medium",
+  },
+  resultText: {
+    color: color.primaryText,
+    fontSize: fontSizes.FONT15,
+    fontFamily: "TT-Octosquares-Medium",
+  },
+  resultSub: {
+    color: color.primaryGray,
+    fontSize: fontSizes.FONT12,
+    fontFamily: "TT-Octosquares-Medium",
+    marginTop: 2,
+  },
+
+  emptySaved: {
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: color.primaryGray,
+    fontSize: fontSizes.FONT14,
+    fontFamily: "TT-Octosquares-Medium",
+  },
+});

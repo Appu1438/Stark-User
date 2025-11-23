@@ -29,6 +29,31 @@ export const useGetUserData = () => {
   return { loading, user, refetchData: getLoggedInUserData };
 };
 
+export const useGetUserSavedPlaces = () => {
+  const [savedPlaces, setSavedPlaces] = useState();
+  const [loading, setLoading] = useState(true);
+
+
+  const fetchSavedPlaces = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get("/save-place");
+      console.log(res.data.data)
+      setSavedPlaces(res.data.data || []);
+    } catch (err) {
+      Alert.alert("Error", "Unable to load saved places.");
+    } finally {
+      setTimeout(() => setLoading(false), 3000);
+    }
+  };
+
+  // Load saved places
+  useEffect(() => {
+    fetchSavedPlaces();
+  }, []);
+  return { loading, savedPlaces, refetchSavedPlaces: fetchSavedPlaces };
+};
+
 export const useGetUserRideHistories = () => {
   const [recentRides, setRecentRides] = useState([]);
   const [loading, setLoading] = useState(true);

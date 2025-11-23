@@ -50,6 +50,9 @@ import fonts from '@/themes/app.fonts';
 import RideOptions from '@/components/ride-plan/ride.options';
 import RideLocationSelector from '@/components/ride-plan/ride.location';
 import RideRoute from '@/components/ride-plan/ride.route';
+import SkeletonRidePlan from './ride-plan-skelton.screen';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+
 export default function RidePlanScreen() {
   const mapRef = useRef(null);
   const fromSearchInputRef = useRef(null);
@@ -58,6 +61,7 @@ export default function RidePlanScreen() {
   const { loading, user } = useGetUserData()
 
 
+  const [expanded, setExpanded] = useState(false);
   const [findingLocation, setFindingLocation] = useState(true);
 
   const [currentLocationName, setCurrentLocationName] = useState("From (Current Location)");
@@ -154,8 +158,8 @@ export default function RidePlanScreen() {
 
         // 🏙️ Build a readable location name
         const locationName =
-          place?.city ||
           place?.street ||
+          place?.city ||
           place?.name ||
           place?.district ||
           place?.region ||
@@ -462,15 +466,16 @@ export default function RidePlanScreen() {
         "Ride Request Sent",
         "Finding a driver for you Don't press back button."
       );
-      setwatingForBookingResponse(true)
+      // setwatingForBookingResponse(true)
       // Fetch addresses
-      const [pickupRes, dropoffRes] = await Promise.all([
-        axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${currentLocation.latitude},${currentLocation.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`),
-        axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${marker.latitude},${marker.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`),
-      ]);
+      // const [pickupRes, dropoffRes] = await Promise.all([
+      //   axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${currentLocation.latitude},${currentLocation.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`),
+      //   axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${marker.latitude},${marker.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`),
+      // ]);
 
-      const currentLocationName = pickupRes?.data?.results?.[0]?.formatted_address || "Pickup Location";
-      const destinationLocationName = dropoffRes?.data?.results?.[0]?.formatted_address || "Dropoff Location";
+      // const currentLocationName = pickupRes?.data?.results?.[0]?.formatted_address || "Pickup Location";
+      // const destinationLocationName = dropoffRes?.data?.results?.[0]?.formatted_address || "Dropoff Location";
+
 
       const fareDetails = await calculateFare({
         driver: driversForType[0], // use first driver for fare calculation
@@ -484,7 +489,7 @@ export default function RidePlanScreen() {
         marker,
         distance: distance.toFixed(2),
         currentLocationName,
-        destinationLocation: destinationLocationName,
+        destinationLocation: destLocationName,
         fare: {
           totalFare: fareDetails.totalFare,
           driverEarnings: fareDetails.driverEarnings,
@@ -570,32 +575,30 @@ export default function RidePlanScreen() {
     }
   };
 
-
   return (
-    <KeyboardAvoidingView style={external.fx_1}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? -50 : -90}
+    <BottomSheetModalProvider>
+      <View style={{ flex: 1 }}>
 
-    >
-      <View>
-
-        <View style={{ height: windowHeight(keyboardAvoidingHeight ? 300 : 500) }}>
-          {findingLocation && (
+        {/* MAP ALWAYS BEHIND */}
+        <View style={{ flex: 1 }}>
+          {findingLocation && (l
             <View style={{
               position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
               backgroundColor: 'rgba(0, 0, 0, 0.6)',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 10,
             }}>
               <ActivityIndicator size="large" color={color.primaryText} style={{ marginBottom: 15 }} />
-              <Text style={{ color: color.primaryText, fontSize: 18, fontWeight: '600' }}>
+              <Text style={{ color: color.primaryText, fontSize: fontSizes.FONT20, fontFamily: 'TT-Octosquares-Medium' }}>
                 Finding your location...
               </Text>
             </View>
           )}
-
           <RideRoute
             currentLocation={currentLocation}
             marker={marker}
@@ -606,67 +609,70 @@ export default function RidePlanScreen() {
             locationSelected={locationSelected}
             driverLists={driverLists}
             mapRef={mapRef}
+            expanded={expanded}
+          />
+        </View>
+
+        {/* BOTTOM SHEET ALWAYS ABOVE MAP */}
+        {locationSelected && distance ? (
+          <RideOptions
+            driverLists={driverLists}
+            driverLoader={driverLoader}
+            distance={distance}
+            district={district}
+            travelTimes={travelTimes}
+            currentLocation={currentLocation}
+            vehicleImages={vehicleImages}
+            vehicleNames={vehicleNames}
+            selectedVehcile={selectedVehcile}
+            setselectedVehcile={setselectedVehcile}
+            handleOrder={handleOrder}
+            watingForBookingResponse={watingForBookingResponse}
+            setlocationSelected={setlocationSelected}
+            setWaitingForResponse={setwatingForBookingResponse}
+            setExpansion={setExpanded}
+          />
+        ) : (
+          <RideLocationSelector
+            router={router}
+            currentLocation={currentLocation}
+            marker={marker}
+            setlocationSelected={setlocationSelected}
+            currentLocationName={currentLocationName}
+            destLocationName={destLocationName}
+            fromSearchInputRef={fromSearchInputRef}
+            toSearchInputRef={toSearchInputRef}
+            setFromPlaces={setFromPlaces}
+            setPlaces={setPlaces}
+            fromPlaces={fromPlaces}
+            places={places}
+            handleFromPlaceSelect={handleFromPlaceSelect}
+            handlePlaceSelect={handlePlaceSelect}
+            setkeyboardAvoidingHeight={setkeyboardAvoidingHeight}
+            setQuery={setQuery}
+            setFromQuery={setFromQuery}
+            fromQuery={fromQuery}
+            query={query}
+            isFindingLocation={findingLocation}
+            setExpansion={setExpanded}
+
           />
 
 
-        </View>
-      </View>
+        )}
 
-      <View style={styles.contentContainer}>
-        <View style={styles.container}>
-          {locationSelected && distance !== null && distance !== undefined ? (
-            <>
-              <RideOptions
-                driverLists={driverLists}
-                driverLoader={driverLoader}
-                distance={distance}
-                district={district}
-                travelTimes={travelTimes}
-                currentLocation={currentLocation}
-                vehicleImages={vehicleImages}
-                vehicleNames={vehicleNames}
-                selectedVehcile={selectedVehcile}
-                setselectedVehcile={setselectedVehcile}
-                handleOrder={handleOrder}
-                watingForBookingResponse={watingForBookingResponse}
-                setlocationSelected={setlocationSelected}
-              />
-            </>
-          ) : (
-            <RideLocationSelector
-              router={router}
-              currentLocation={currentLocation}
-              marker={marker}
-              setlocationSelected={setlocationSelected}
-              currentLocationName={currentLocationName}
-              destLocationName={destLocationName}
-              fromSearchInputRef={fromSearchInputRef}
-              toSearchInputRef={toSearchInputRef}
-              setFromPlaces={setFromPlaces}
-              setPlaces={setPlaces}
-              fromPlaces={fromPlaces}
-              places={places}
-              handleFromPlaceSelect={handleFromPlaceSelect}
-              handlePlaceSelect={handlePlaceSelect}
-              setkeyboardAvoidingHeight={setkeyboardAvoidingHeight}
-              setQuery={setQuery}
-              setFromQuery={setFromQuery}
-              fromQuery={fromQuery}
-              query={query}
-            />
-          )}
-        </View>
-      </View>
+        {/* MODAL */}
+        {modalVisible && (
+          <FooterModal
+            isVisible={modalVisible}
+            type={modalType}
+            title={modalMessage}
+            subText={modalSubMessage}
+            onHide={() => setModalVisible(false)}
+          />
+        )}
 
-      {modalVisible && modalMessage && modalType && modalSubMessage && (
-        <FooterModal
-          isVisible={modalVisible}
-          type={modalType}
-          title={modalMessage}
-          subText={modalSubMessage}
-          onHide={() => setModalVisible(false)}
-        />
-      )}
-    </KeyboardAvoidingView>
+      </View>
+    </BottomSheetModalProvider>
   );
 }

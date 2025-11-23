@@ -106,6 +106,13 @@ export default function RideDetailScreen() {
           duration: 1000,
           useNativeDriver: false,
         }).start();
+        // Update actual driver state too
+        setDriver((prev) => ({
+          ...prev,
+          latitude: live.current.latitude,
+          longitude: live.current.longitude,
+          heading: live.heading,
+        }));
         setDriverHeading(live.heading);
       }
     });
@@ -277,6 +284,12 @@ export default function RideDetailScreen() {
     if (!ride || !driver) return 0;
     if (ride.status === "Processing") return estimateArrivalFromDriver(driver, ride.currentLocation);
     if (ride.status === "Ongoing") return estimateArrivalFromDriver(driver, ride.destinationLocation);
+    return 0;
+  }, [ride, driver]);
+
+  const remainingDistance = useMemo(() => {
+    if (!ride || !driver) return 0;
+    if (ride.status === "Ongoing") return calculateDistance(driver.latitude, driver.longitude, ride.destinationLocation.latitude, ride.destinationLocation.longitude);
     return 0;
   }, [ride, driver]);
 
@@ -601,7 +614,7 @@ export default function RideDetailScreen() {
                   zIndex={1000}
                 >
                   <Image
-                    source={markerIcon}
+                    source={Images.mapPickupMarker}
                     style={{ width: windowWidth(35), height: windowHeight(35), tintColor: color.primaryGray }}
                     resizeMode="contain"
                   />
@@ -613,7 +626,7 @@ export default function RideDetailScreen() {
                   title={`Drop : ${ride.destinationLocationName}`}
                   zIndex={1000}                >
                   <Image
-                    source={markerIcon}
+                    source={Images.mapDropMarker}
                     style={{ width: windowWidth(35), height: windowHeight(35), tintColor: color.primaryGray }}
                     resizeMode="contain"
                   />
@@ -828,8 +841,20 @@ export default function RideDetailScreen() {
 
             <View style={styles.fareRow}>
               <Text style={styles.fareLabel}>Planned Distance</Text>
-              <Text style={styles.fareValue}>{ride.distance} km</Text>
+              <Text style={styles.fareValue}>{ride.distance} Km</Text>
             </View>
+
+            {/* If ongoing , show remaining distance */}
+            {(ride.status === "Ongoing") && (
+              <View style={styles.fareRow}>
+                <Text style={styles.fareLabel}>
+                  Remaining Distance
+                </Text>
+                <Text style={styles.fareValue}>
+                  {remainingDistance} Km
+                </Text>
+              </View>
+            )}
 
             {/* Show Cancellation Details if cancelled */}
             {ride.status === "Cancelled" && ride.cancelDetails && (

@@ -1,10 +1,9 @@
 import { View, Text } from 'react-native'
 import React from 'react'
-import RidePlanScreen from '@/screens/ride-plan/ride-plan.screen'
+import SavedPlaces from '@/screens/saved-places/saved-places.screen'
 
 export default function index() {
     return (
-    
-        <RidePlanScreen />
+        <SavedPlaces />
     )
 }

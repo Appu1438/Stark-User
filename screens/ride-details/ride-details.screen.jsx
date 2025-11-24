@@ -732,8 +732,8 @@ export default function RideDetailScreen() {
             <Image
               source={{
                 uri:
-                  driver?.photo_url ||
-                  ride.driverId?.photo_url ||
+                  driver?.profilePic ||
+                  ride.driverId?.profilePic ||
                   getAvatar(ride?.driverId?.gender),
               }}
               style={styles.driverAvatar}

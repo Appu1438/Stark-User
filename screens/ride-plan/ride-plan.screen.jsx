@@ -581,7 +581,7 @@ export default function RidePlanScreen() {
 
         {/* MAP ALWAYS BEHIND */}
         <View style={{ flex: 1 }}>
-          {findingLocation && (l
+          {findingLocation && (
             <View style={{
               position: 'absolute',
               top: 0,

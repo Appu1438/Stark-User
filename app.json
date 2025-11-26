@@ -4,12 +4,9 @@
     "slug": "stark-user",
     "version": "1.0.0",
     "orientation": "portrait",
-
     "icon": "./assets/images/logo/IconOnly.png",
-
     "scheme": "stark",
     "userInterfaceStyle": "light",
-
     "plugins": [
       [
         "expo-splash-screen",
@@ -26,11 +23,12 @@
       [
         "expo-font",
         {
-          "fonts": ["./assets/fonts/TT-Octosquares-Medium.ttf"]
+          "fonts": [
+            "./assets/fonts/TT-Octosquares-Medium.ttf"
+          ]
         }
       ]
     ],
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo/IconOnly.png",
@@ -38,12 +36,12 @@
       },
       "package": "com.adithyanskumar.stark",
       "versionCode": 1,
+      "enableSeparateBuildPerArchitecture": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
       ]
     },
-
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/logo/IconOnly.png",
@@ -52,7 +50,6 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-
     "extra": {
       "eas": {
         "projectId": "56aee935-c73a-470b-825f-34e350e13bff"

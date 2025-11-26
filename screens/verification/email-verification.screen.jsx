@@ -92,7 +92,7 @@ export default function EmailVerificationScreen() {
           />
           <View style={[external.mt_30]}>
             <Button
-              title="Verify"
+              title={loader ? "Verifying OTP" : 'Verify OTP'}
               onPress={() => handleSubmit()}
               disabled={loader}
             />

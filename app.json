@@ -4,7 +4,7 @@
     "slug": "stark-user",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo/TextOnly.png",
+    "icon": "./assets/images/logo/FullLogo.png",
     "scheme": "stark",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -31,7 +31,7 @@
     ],
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo/TextOnly.png",
+        "foregroundImage": "./assets/images/logo/FullLogo.png",
         "backgroundColor": "#000000"
       },
       "package": "com.adithyanskumar.stark",
@@ -50,7 +50,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/logo/TextOnly.png",
+      "icon": "./assets/images/logo/FullLogo.png",
       "bundleIdentifier": "com.adithyanskumar.stark",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

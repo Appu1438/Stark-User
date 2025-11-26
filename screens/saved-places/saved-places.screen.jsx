@@ -498,7 +498,7 @@ export default function SavedPlaces() {
             >
               <Marker coordinate={location}>
                 <Image
-                  source={Images.mapMarker}
+                  source={Images.mapPickupMarker}
                   style={styles.mapMarker}
                   resizeMode="contain"
                 />

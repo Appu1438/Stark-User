@@ -433,10 +433,10 @@ export default function RidePlanScreen() {
           [currentLocation, marker],
           {
             edgePadding: {
-              top: 120,
-              bottom: 250,
-              left: 80,
-              right: 80,
+              top: 200,
+              bottom: 450,
+              left: 100,
+              right: 100,
             },
             animated: true,
           }

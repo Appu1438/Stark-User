@@ -10,5 +10,8 @@
 # react-native-reanimated
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
+-keep class com.google.android.libraries.** { *; }
+-keep class com.google.maps.** { *; }
+-keep class com.google.android.gms.maps.** { *; }
 
 # Add any project specific keep options here:

@@ -4,7 +4,7 @@
     "slug": "stark-user",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo/IconOnly.png",
+    "icon": "./assets/images/logo/TextOnly.png",
     "scheme": "stark",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -31,7 +31,7 @@
     ],
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo/IconOnly.png",
+        "foregroundImage": "./assets/images/logo/TextOnly.png",
         "backgroundColor": "#000000"
       },
       "package": "com.adithyanskumar.stark",
@@ -41,14 +41,22 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDZ3-iM9suiGVssgSjEdApgQXpXmDgvVAc"
+        }
+      }
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/logo/IconOnly.png",
+      "icon": "./assets/images/logo/TextOnly.png",
       "bundleIdentifier": "com.adithyanskumar.stark",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyDZ3-iM9suiGVssgSjEdApgQXpXmDgvVAc"
       }
     },
     "extra": {

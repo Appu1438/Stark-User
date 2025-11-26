@@ -209,7 +209,7 @@ export default function RideOptions({
     // animated values for card content
     const cardHeight = ctrl.expand.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, 550], // expanded content height
+      outputRange: [0, windowHeight(400)], // expanded content height
       extrapolate: "clamp",
     });
     const cardOpacity = ctrl.expand.interpolate({
@@ -317,7 +317,7 @@ export default function RideOptions({
               ]}
             >
               {/* ScrollView for *internal* details */}
-              <ScrollView
+              <Animated.ScrollView
                 showsVerticalScrollIndicator={false}
                 style={styles.detailsScrollView}
               >
@@ -458,7 +458,7 @@ export default function RideOptions({
                     be shared after booking confirmation.
                   </Text>
                 </View>
-              </ScrollView>
+              </Animated.ScrollView>
 
             </Animated.View>
           </Pressable>

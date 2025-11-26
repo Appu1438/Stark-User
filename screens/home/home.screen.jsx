@@ -30,7 +30,7 @@ import { useGetUserRideHistories } from "@/hooks/useGetUserData";
 import HomeSkeleton from "./home-skelton.screen";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { fontSizes, windowHeight } from "@/themes/app.constant";
+import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import RideCard from "@/components/ride/ride.card";
 import { CAB_TYPES, DAILY_DESTINATIONS, EXPLORE_MORE, FEATURES, NEARBY_PLACES } from "@/configs/constants";
 
@@ -208,15 +208,15 @@ export default function Home() {
                   marginRight: 15,
                   borderRadius: 18,
                   overflow: "hidden",
-                  width: 230,
-                  height: 150,
+                  width: windowWidth(280),
+                  height: windowHeight(150),
                   backgroundColor: color.darkPrimary,
                 }}
               >
                 <Image source={item.image} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
                 <LinearGradient colors={["transparent", "rgba(0,0,0,0.75)"]} style={StyleSheet.absoluteFillObject} />
                 <View style={{ position: "absolute", bottom: 10, left: 10 }}>
-                  <Text style={{ color: color.primaryText, fontFamily: "TT-Octosquares-Medium", fontSize: fontSizes.FONT16 }}>
+                  <Text style={{ color: color.primaryText, fontFamily: "TT-Octosquares-Medium", fontSize: fontSizes.FONT14 }}>
                     {item.name}
                   </Text>
                   <Text
@@ -257,7 +257,7 @@ export default function Home() {
                   })
                 } style={{
                   marginRight: 12,
-                  width: 280,
+                  width: windowWidth(320),
                 }}
               >
                 {/* Full Image */}
@@ -265,7 +265,7 @@ export default function Home() {
                   style={{
                     borderRadius: 15,
                     overflow: "hidden",
-                    height: 150,
+                    height: windowHeight(150),
                     backgroundColor: color.darkPrimary,
                   }}
                 >
@@ -332,8 +332,8 @@ export default function Home() {
                   marginRight: 12,
                   borderRadius: 15,
                   overflow: "hidden",
-                  width: 230,
-                  height: 150,
+                  width: windowWidth(280),
+                  height: windowHeight(150),
                   backgroundColor: color.darkPrimary,
                 }}
               >
@@ -392,7 +392,7 @@ export default function Home() {
                   })
                 } style={{
                   marginRight: 12,
-                  width: 280,
+                  width: windowWidth(320),
                 }}
               >
                 {/* Full Image */}
@@ -400,7 +400,7 @@ export default function Home() {
                   style={{
                     borderRadius: 15,
                     overflow: "hidden",
-                    height: 150,
+                    height: windowHeight(150),
                     backgroundColor: color.darkPrimary,
                   }}
                 >
@@ -469,8 +469,8 @@ export default function Home() {
                   marginRight: 12,
                   borderRadius: 15,
                   overflow: "hidden",
-                  width: 280,
-                  height: 150,
+                  width: windowWidth(320),
+                  height: windowHeight(150),
                 }}
               >
                 <Image source={item.image} style={{ width: "100%", height: "100%" }} resizeMode="cover" />

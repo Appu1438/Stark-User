@@ -37,6 +37,7 @@
       "package": "com.adithyanskumar.stark",
       "versionCode": 1,
       "enableSeparateBuildPerArchitecture": true,
+      "enableProguardInReleaseBuilds": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"

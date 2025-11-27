@@ -71,6 +71,67 @@ export default function Home() {
     }, [])
   );
 
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
+
+  async function registerForPushNotificationsAsync() {
+
+    if (Device.isDevice) {
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== "granted") {
+        Toast.show("Failed to get push token for push notification!", {
+          type: "danger",
+        });
+        return;
+      }
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ??
+        Constants?.easConfig?.projectId;
+      if (!projectId) {
+        Toast.show("Failed to get project id for push notification!", {
+          type: "danger",
+        });
+      }
+      try {
+        const pushTokenString = (
+          await Notifications.getExpoPushTokenAsync({
+            projectId,
+          })
+        ).data;
+        await axiosInstance.put(
+          `/update-push-token`,
+          { token: pushTokenString },
+        );
+        console.log(pushTokenString);
+        // return pushTokenString;
+      } catch (e) {
+        Toast.show(`${e}`, {
+          type: "danger",
+        });
+      }
+    } else {
+      Toast.show("Must use physical device for Push Notifications", {
+        type: "danger",
+      });
+    }
+
+    if (Platform.OS === "android") {
+      Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C",
+      });
+    }
+  }
+
   const scrollY = useRef(new Animated.Value(0)).current;
 
   // 🔥 Search bar animated movement (0 → -15)

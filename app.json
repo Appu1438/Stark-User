@@ -45,7 +45,6 @@
       "versionCode": 1,
       "enableSeparateBuildPerArchitecture": true,
       "enableProguardInReleaseBuilds": true,
-      "googleServicesFile": "./android/app/google-services.json",
       "useNextNotificationsApi": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",

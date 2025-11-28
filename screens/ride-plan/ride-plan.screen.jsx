@@ -42,7 +42,6 @@ import { sendPushNotification } from '@/utils/notifications/sendPushNotification
 import axiosInstance from '@/api/axiosInstance';
 import { latitude } from 'geolib';
 import { getDistrict } from '@/utils/ride/getDistrict';
-import FooterModal from '@/components/modal/alertModal/footerModal/footer-Modal';
 import { calculateDistance } from '@/utils/ride/calculateDistance';
 import Images from '@/utils/images';
 import { customMapStyle } from '@/utils/map/mapStyle';
@@ -53,6 +52,7 @@ import RideRoute from '@/components/ride-plan/ride.route';
 import SkeletonRidePlan from './ride-plan-skelton.screen';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AppAlert from '@/components/modal/alert-modal/alert.modal';
+import FooterModal from '@/components/modal/footer-modal/footer.modal';
 
 export default function RidePlanScreen() {
   const mapRef = useRef(null);

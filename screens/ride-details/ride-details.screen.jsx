@@ -9,7 +9,7 @@ import { styles } from "./styles";
 import getVehicleIcon from "@/utils/ride/getVehicleIcon";
 import estimateArrivalFromDriver from "@/utils/ride/getEstimatedDriverArrival";
 import { Toast } from "react-native-toast-notifications";
-import FooterModal from "@/components/modal/alertModal/footerModal/footer-Modal";
+import FooterModal from '@/components/modal/footer-modal/footer.modal';
 import { getAvatar } from "@/utils/avatar/getAvatar";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import { sendPushNotification } from "@/utils/notifications/sendPushNotification";

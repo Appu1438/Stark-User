@@ -7,28 +7,43 @@ import { CommonActions } from '@react-navigation/native';
 /**
  * Logout Function
  */
-export const logout = async () => {
+export const logout = async (setLoading) => {
     try {
+        // If a loading state setter is provided, start loading
+        if (typeof setLoading === "function") {
+            setLoading(true);
+        }
 
-        console.log('logout')
+        console.log("logout");
 
-        // Call backend logout route to clear cookie & DB token
+        // Backend logout
         await axiosInstance.post("/logout", {}, { withCredentials: true });
 
-        // Clear stored access token
+        // Clear token
         await AsyncStorage.removeItem("accessToken");
 
-        // Navigate to login screen
-        router.replace("/(routes)/login"); // replaces home screen
+        // Stop loader before navigating
+        if (typeof setLoading === "function") {
+            setLoading(false);
+        }
+
+        router.replace("/(routes)/login");
 
     } catch (error) {
         console.log("Logout failed:", error.message);
-        // Even if request fails, clear local tokens to force re-login
-        await AsyncStorage.removeItem("accessToken");
-        router.replace("/(routes)/login"); // replaces home screen
 
+        // Always clear token even if backend fails
+        await AsyncStorage.removeItem("accessToken");
+
+        // Stop loader before navigation
+        if (typeof setLoading === "function") {
+            setLoading(false);
+        }
+
+        router.replace("/(routes)/login");
     }
 };
+
 
 /**
  * Refresh Token Function

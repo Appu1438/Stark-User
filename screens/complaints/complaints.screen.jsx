@@ -20,6 +20,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useGetUserRideHistories } from "@/hooks/useGetUserData";
 import axiosInstance from "@/api/axiosInstance";
 import ComplaintSkeleton from "./complaints-skelton.screen";
+import AppAlert from "@/components/modal/alert-modal/alert.modal";
 
 export default function Complaints() {
   const { recentRides } = useGetUserRideHistories();
@@ -32,6 +33,27 @@ export default function Complaints() {
   const [loadingComplaints, setLoadingComplaints] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Custom alert modal states
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: "",
+    message: "",
+    confirmText: "OK",
+    showCancel: false,
+    onConfirm: () => setShowAlert(false),
+  });
+
+  const showCustomAlert = (title, message) => {
+    setAlertConfig({
+      title,
+      message,
+      confirmText: "OK",
+      showCancel: false,
+      onConfirm: () => setShowAlert(false),
+    });
+    setShowAlert(true);
+  };
+
   useEffect(() => {
     fetchComplaints();
   }, []);
@@ -41,7 +63,6 @@ export default function Complaints() {
       setLoadingComplaints(true);
       const res = await axiosInstance.get("/complaints/user");
       if (res?.data?.data) {
-        // adjust to your response shape if needed
         setComplaints(res.data.data);
       } else if (res?.data) {
         setComplaints(res.data);
@@ -49,8 +70,7 @@ export default function Complaints() {
         setComplaints([]);
       }
     } catch (err) {
-      console.error("Failed to fetch complaints:", err);
-      Alert.alert("Error", "Could not load complaints. Please try again.");
+      showCustomAlert("Error", "Could not load complaints. Please try again.");
     } finally {
       setTimeout(() => {
         setLoadingComplaints(false);
@@ -60,11 +80,9 @@ export default function Complaints() {
 
   if (loadingComplaints) return <ComplaintSkeleton />;
 
-
   const handleSubmit = async () => {
     if (!category || !message.trim()) {
-      Alert.alert("Missing fields", "Please select a category and describe your issue.");
-      return;
+      return showCustomAlert("Missing fields", "Please select a category and describe your issue.");
     }
 
     try {
@@ -79,21 +97,17 @@ export default function Complaints() {
       }
 
       const res = await axiosInstance.post("/complaints/user", payload);
-
-      // Expect server to return the saved complaint in res.data.data (as earlier pattern)
       const created = res?.data?.data || res?.data || null;
 
       if (created) {
-        // Prepend created complaint to local state
         setComplaints((prev) => [created, ...prev]);
-        // reset form
         setSelectedRide(null);
         setCategory("");
         setMessage("");
         setRideModalVisible(false);
-        Alert.alert("Success", "Complaint submitted successfully.");
+
+        showCustomAlert("Success", "Complaint submitted successfully.");
       } else {
-        // fallback optimistic entry (if server returns nothing)
         const fallback = {
           id: Date.now(),
           ride: selectedRide || null,
@@ -103,15 +117,11 @@ export default function Complaints() {
           date: new Date().toISOString().split("T")[0],
         };
         setComplaints((prev) => [fallback, ...prev]);
-        setSelectedRide(null);
-        setCategory("");
-        setMessage("");
-        setRideModalVisible(false);
-        Alert.alert("Submitted", "Complaint submitted (no server response body).");
+
+        showCustomAlert("Submitted", "Complaint submitted.");
       }
     } catch (err) {
-      console.error("Submit complaint failed:", err);
-      Alert.alert("Error", "Failed to submit complaint. Please try again.");
+      showCustomAlert("Error", "Failed to submit complaint. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +141,6 @@ export default function Complaints() {
         return "#999";
     }
   };
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: color.background }}
@@ -299,7 +308,7 @@ export default function Complaints() {
 
           <View style={{ marginTop: 18 }}>
             <Button
-              title={submitting ? "Submitting..." : "Submit Complaint"}
+              title={submitting ? <ActivityIndicator color={color.primary} /> : "Submit Complaint"}
               onPress={handleSubmit}
               disabled={submitting}
             />
@@ -450,6 +459,16 @@ export default function Complaints() {
           </View>
         </View>
       </Modal>
+      <AppAlert
+        visible={showAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onCancel={() => setShowAlert(false)}
+        onConfirm={alertConfig.onConfirm}
+      />
+
     </KeyboardAvoidingView>
   );
 }

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import React, { useState } from "react";
 import { useTheme } from "@react-navigation/native";
 import { windowHeight, windowWidth } from "@/themes/app.constant";
@@ -119,7 +119,7 @@ export default function RegistrationScreen() {
               <View style={styles.margin}>
                 <Button
                   onPress={() => handleSubmit()}
-                  title="Next"
+                  title={loading ? <ActivityIndicator color={color.primary} /> : "Next"}
                   disabled={loading}
                   backgroundColor={color.buttonBg}
                   textColor={color.whiteColor}

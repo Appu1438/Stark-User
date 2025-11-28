@@ -41,12 +41,14 @@ export default function RideLocationSelector({
   places = [],
   handleFromPlaceSelect,
   handlePlaceSelect,
-  setkeyboardAvoidingHeight,
   setQuery,
   setFromQuery,
   fromQuery,
   query,
-  isFindingLocation
+  isFindingLocation,
+  isWaitingForResponse,
+  setAlertConfig,
+  setShowAlert
 }) {
   // saved places
   const { loading: savedLoading, savedPlaces = [] } = useGetUserSavedPlaces();
@@ -71,9 +73,9 @@ export default function RideLocationSelector({
   // snap function same logic as RideOptions
   const snapTo = (pointKey) => {
     let toVal = 0;
-    if (pointKey === "COLLAPSED"){
-       toVal = 0;
-       Keyboard.dismiss()
+    if (pointKey === "COLLAPSED") {
+      toVal = 0;
+      Keyboard.dismiss()
     }
     else if (pointKey === "HALF") {
       const frac = (SNAP.HALF - SNAP.COLLAPSED) / (SNAP.FULL - SNAP.COLLAPSED);
@@ -219,7 +221,24 @@ export default function RideLocationSelector({
         </Pressable>
 
         <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()} style={styles.headerLeft}>
+          <Pressable
+            onPress={() => {
+              if (isWaitingForResponse) {
+                setAlertConfig({
+                  title: "Please Wait",
+                  message: "We are processing your booking request. You cannot go back right now.",
+                  confirmText: "OK",
+                  showCancel: false,
+                  onConfirm: () => setShowAlert(false),
+                });
+                setShowAlert(true);
+                return;
+              }
+
+              router.back(); // Normal behavior
+            }}
+            style={styles.headerLeft}
+          >
             <LeftArrow />
           </Pressable>
 
@@ -388,24 +407,6 @@ export default function RideLocationSelector({
             if (!expanded) snapTo("HALF");
           }}
         >
-          {/* Saved Places */}
-          {!isTyping && !isFindingLocation && (
-            <>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Saved Places</Text>
-                <Text style={styles.sectionSub}>{savedLoading ? "Loading..." : `${savedPlaces.length} items`}</Text>
-              </View>
-
-              {savedPlaces.length === 0 ? (
-                <View style={styles.emptySaved}>
-                  <Text style={styles.emptyText}>No saved places yet.</Text>
-                </View>
-              ) : (
-                savedPlaces.map((p, i) => renderSavedPlace(p, i))
-              )}
-            </>
-          )}
-
           {/* From suggestions */}
           {fromPlaces?.length > 0 && (
             <>
@@ -466,6 +467,25 @@ export default function RideLocationSelector({
               ))}
             </>
           )}
+          
+          {/* Saved Places */}
+          {!isFindingLocation && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Saved Places</Text>
+                <Text style={styles.sectionSub}>{savedLoading ? "Loading..." : `${savedPlaces.length} items`}</Text>
+              </View>
+
+              {savedPlaces.length === 0 ? (
+                <View style={styles.emptySaved}>
+                  <Text style={styles.emptyText}>No saved places yet.</Text>
+                </View>
+              ) : (
+                savedPlaces.map((p, i) => renderSavedPlace(p, i))
+              )}
+            </>
+          )}
+
         </Animated.ScrollView>
       </View>
     </Animated.View>

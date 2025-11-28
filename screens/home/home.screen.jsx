@@ -33,11 +33,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import RideCard from "@/components/ride/ride.card";
 import { CAB_TYPES, DAILY_DESTINATIONS, EXPLORE_MORE, FEATURES, NEARBY_PLACES } from "@/configs/constants";
+import AppAlert from "@/components/modal/alert-modal/alert.modal";
 
 
 export default function Home() {
   const { recentRides, loading, refetchRides } = useGetUserRideHistories();
   const [refreshing, setRefreshing] = useState(false);
+
+  const [pendingExit, setPendingExit] = useState(false);
+
+  const [showAlert, setShowAlert] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -57,19 +62,21 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        Alert.alert("Exit App", "Are you sure you want to exit?", [
-          { text: "Cancel", style: "cancel" },
-          { text: "Exit", onPress: () => BackHandler.exitApp() },
-        ]);
-        return true;
+        setPendingExit(true);    // show exit alert modal
+        setShowAlert(true);      // open modal
+        return true;             // block default behavior
       };
 
       if (Platform.OS === "android") {
-        const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+        const subscription = BackHandler.addEventListener(
+          "hardwareBackPress",
+          onBackPress
+        );
         return () => subscription.remove();
       }
     }, [])
   );
+
 
   useEffect(() => {
     registerForPushNotificationsAsync();
@@ -584,6 +591,23 @@ export default function Home() {
         </Section>
 
       </Animated.ScrollView>
+
+      <AppAlert
+        visible={showAlert}
+        title="Exit App"
+        message="Are you sure you want to exit?"
+        cancelText="Cancel"
+        confirmText="Exit"
+        onCancel={() => {
+          setPendingExit(false);
+          setShowAlert(false);
+        }}
+        onConfirm={() => {
+          setShowAlert(false);
+          setTimeout(() => BackHandler.exitApp(), 100);
+        }}
+      />
+
     </View>
   );
 }

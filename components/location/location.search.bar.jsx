@@ -104,20 +104,8 @@ export default function LocationSearchBar() {
       <View style={styles.rightSection}>
         <Clock />
         <Text style={styles.nowText}>Now</Text>
-        <DownArrow />
+        {/* <DownArrow /> */}
       </View>
-      {/* <View style={styles.rightSection}>
-        <LinearGradient
-          colors={[color.primary, color.buttonBg]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.gradientButton}
-        >
-          <Clock width={14} height={14} color={color.primaryText} />
-          <Text style={styles.nowText}>Now</Text>
-          <DownArrow width={10} height={10} color={color.primaryText} />
-        </LinearGradient>
-      </View> */}
     </Pressable>
   );
 }
@@ -153,29 +141,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   placeholderText: {
-    fontSize: fontSizes.FONT16,
+    fontSize: fontSizes.FONT15,
     fontWeight: "500",
     color: color.primaryText,
     fontFamily: "TT-Octosquares-Medium",
   },
-  // rightSection: {
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  // },
-  // gradientButton: {
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  //   paddingHorizontal: windowWidth(10),
-  //   height: windowHeight(30),
-  //   borderRadius: 20,
-  //   gap: 5,
-  // },
-  // nowText: {
-  //   fontSize: fontSizes.FONT12,
-  //   fontWeight: "600",
-  //   fontFamily: "TT-Octosquares-Medium",
-  //   color: color.primaryText,
-  // },.
   rightSection: {
     flexDirection: "row",
     alignItems: "center",
@@ -187,7 +157,7 @@ const styles = StyleSheet.create({
   nowText: {
     fontSize: windowHeight(12),
     fontWeight: "600",
-    paddingHorizontal: windowWidth(6),
+    paddingHorizontal: windowWidth(5),
     fontFamily: 'TT-Octosquares-Medium'
 
   },

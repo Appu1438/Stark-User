@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import Button from "@/components/common/button";
@@ -17,11 +18,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import ProfileSkeleton from "./profile-skelton.screen";
+import AppAlert from "@/components/modal/alert-modal/alert.modal";
+
 
 export default function Profile() {
   const { user, loading, refetchData } = useGetUserData();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -34,20 +40,24 @@ export default function Profile() {
   const mockRating = user.ratings || 0;
   const membership = user.totalRides > 50 ? "Gold Member" : "Basic Member";
 
-  const handleLogout = async () => {
-    Alert.alert(
-      "Confirm Logout",
-      "Are you sure you want to log out?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Log Out",
-          style: "destructive",
-          onPress: async () => await logout(),
-        },
-      ],
-      { cancelable: true }
-    );
+  // const handleLogout = async () => {
+  //   Alert.alert(
+  //     "Confirm Logout",
+  //     "Are you sure you want to log out?",
+  //     [
+  //       { text: "Cancel", style: "cancel" },
+  //       {
+  //         text: "Log Out",
+  //         style: "destructive",
+  //         onPress: async () => await logout(setIsLoggingOut),
+  //       },
+  //     ],
+  //     { cancelable: true }
+  //   );
+  // };
+
+  const handleLogout = () => {
+    setShowAlert(true);
   };
 
   return (
@@ -186,10 +196,27 @@ export default function Profile() {
 
       {/* ---------- LOGOUT ---------- */}
       <ProfileSection title="">
-        <Button title="Log Out" onPress={handleLogout} />
+        <Button
+          title={isLoggingOut ? <ActivityIndicator color={color.primary} /> : "Log Out"}
+          onPress={handleLogout}
+          disabled={isLoggingOut} />
       </ProfileSection>
 
       <View style={{ height: 60 }} />
+
+      <AppAlert
+        visible={showAlert}
+        title="Confirm Logout"
+        message="Are you sure you want to log out?"
+        cancelText="Cancel"
+        confirmText="Log Out"
+        onCancel={() => setShowAlert(false)}
+        onConfirm={() => {
+          setShowAlert(false);
+          logout(setIsLoggingOut);
+        }}
+      />
+
     </ScrollView>
   );
 }

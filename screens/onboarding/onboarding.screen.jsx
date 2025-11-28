@@ -18,25 +18,21 @@ import { slides } from '@/configs/constants';
 import Images from '@/utils/images';
 import color from '@/themes/app.colors';
 import { BackArrow } from '@/utils/icons';
+import AppAlert from '@/components/modal/alert-modal/alert.modal';
 
 const { width, height } = Dimensions.get('window');
 
 export default function OnBoardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const [showAlert, setShowAlert] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        Alert.alert(
-          "Exit App",
-          "Are you sure you want to exit?",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Exit", onPress: () => BackHandler.exitApp() },
-          ],
-          { cancelable: true }
-        );
-        return true; // Prevent default back behavior
+        setPendingExit(true);    // show exit alert modal
+        setShowAlert(true);      // open modal
+        return true;             // block default behavior
       };
 
       if (Platform.OS === "android") {
@@ -44,12 +40,11 @@ export default function OnBoardingScreen() {
           "hardwareBackPress",
           onBackPress
         );
-
-        // Cleanup on unmount
         return () => subscription.remove();
       }
     }, [])
   );
+
 
 
   return (
@@ -109,6 +104,20 @@ export default function OnBoardingScreen() {
             </View>
           </View>
         )}
+      />
+      <AppAlert
+        visible={showAlert}
+        title="Exit App"
+        message="Are you sure you want to exit?"
+        cancelText="Cancel"
+        confirmText="Exit"
+        onCancel={() => {
+          setShowAlert(false);
+        }}
+        onConfirm={() => {
+          setShowAlert(false);
+          setTimeout(() => BackHandler.exitApp(), 100);
+        }}
       />
     </View>
   );

@@ -567,7 +567,7 @@ export default function RideOptions({
             alignItems: "center",
             justifyContent: "center",
           }}>
-            <ActivityIndicator size={"large"} />
+            <ActivityIndicator size={"large"} color={color.primaryGray} />
           </View>
         ) : (
           availableVehicleTypes.length === 0 ? (
@@ -614,7 +614,7 @@ export default function RideOptions({
                 backgroundColor: "transparent",
               }}>
                 <Button
-                  title="Confirm Booking"
+                  title={watingForBookingResponse ? <ActivityIndicator color={color.primary} /> : "Confirm Booking"}
                   onPress={() => handleOrder()}
                   disabled={watingForBookingResponse}
                 />

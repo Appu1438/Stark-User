@@ -92,12 +92,12 @@ export default function EmailVerificationScreen() {
           />
           <View style={[external.mt_30]}>
             <Button
-              title={loader ? "Verifying OTP" : 'Verify OTP'}
+              title={loader ? <ActivityIndicator color={color.primary} /> : 'Verify OTP'}
               onPress={() => handleSubmit()}
               disabled={loader}
             />
           </View>
-          <View style={[external.mb_15]}>
+          {/* <View style={[external.mb_15]}>
             <View
               style={[
                 external.pt_10,
@@ -114,7 +114,7 @@ export default function EmailVerificationScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </View> */}
         </View>
       }
     />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback, useDebugValue } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert, Platform, ActivityIndicator } from "react-native";
 import MapView, { Marker, AnimatedRegion, PROVIDER_GOOGLE } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { useLocalSearchParams, router } from "expo-router";
@@ -9,7 +9,7 @@ import { styles } from "./styles";
 import getVehicleIcon from "@/utils/ride/getVehicleIcon";
 import estimateArrivalFromDriver from "@/utils/ride/getEstimatedDriverArrival";
 import { Toast } from "react-native-toast-notifications";
-import FooterModal from "@/components/modal/footerModal/footer-Modal";
+import FooterModal from "@/components/modal/alertModal/footerModal/footer-Modal";
 import { getAvatar } from "@/utils/avatar/getAvatar";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import { sendPushNotification } from "@/utils/notifications/sendPushNotification";
@@ -24,6 +24,8 @@ import { customMapStyle } from "@/utils/map/mapStyle";
 import Button from "@/components/common/button";
 import { useGetUserRideHistories } from "@/hooks/useGetUserData";
 import RideDetailsSkeleton from "./ride-details-skelton.screen";
+import AppAlert from "@/components/modal/alert-modal/alert.modal";
+import { renderStars } from "@/components/ride/ride.rating.stars";
 
 
 export default function RideDetailScreen() {
@@ -46,6 +48,10 @@ export default function RideDetailScreen() {
 
   const [rating, setRating] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [remainingDistance, setRemainingDistance] = useState(0);
+
 
 
   // ✅ Fetch Ride
@@ -287,11 +293,39 @@ export default function RideDetailScreen() {
     return 0;
   }, [ride, driver]);
 
-  const remainingDistance = useMemo(() => {
-    if (!ride || !driver) return 0;
-    if (ride.status === "Ongoing") return calculateDistance(driver.latitude, driver.longitude, ride.destinationLocation.latitude, ride.destinationLocation.longitude);
-    return 0;
-  }, [ride, driver]);
+
+  useEffect(() => {
+    if (!ride || !driver) return;
+    if (ride.status !== "Ongoing") return;
+
+    updateRemainingDistance(driver, ride);
+
+  }, [driver]);
+
+  const throttle = (func, delay) => {
+    let lastCall = 0;
+    return (...args) => {
+      const now = Date.now();
+      if (now - lastCall >= delay) {
+        lastCall = now;
+        func(...args);
+      }
+    };
+  };
+
+  const updateRemainingDistance = useRef(
+    throttle(async (driver, ride) => {
+      const dist = await calculateDistance(
+        driver.latitude,
+        driver.longitude,
+        ride.destinationLocation.latitude,
+        ride.destinationLocation.longitude
+      );
+      setRemainingDistance(dist.toFixed(1));
+    }, 3000)
+  ).current;
+
+
 
   // Status badge color based on status 
   const getStatusBadgeStyle = () => {
@@ -316,6 +350,40 @@ export default function RideDetailScreen() {
   };
 
 
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: "",
+    message: "",
+    confirmText: "OK",
+    showCancel: false,
+    onConfirm: () => setShowAlert(false),
+    onCancel: () => setShowAlert(false),
+  });
+
+  // Temporary holder for cancellation prompt
+  let pendingCancelMessage = "";
+
+  // ⭐ Async confirm helper
+  const confirmAction = () =>
+    new Promise((resolve) => {
+      setAlertConfig({
+        title: "Confirm Cancellation",
+        message: pendingCancelMessage,
+        confirmText: "Yes",
+        showCancel: true,
+        onCancel: () => {
+          setShowAlert(false);
+          resolve(false);
+        },
+        onConfirm: () => {
+          setShowAlert(false);
+          resolve(true);
+        },
+      });
+      setShowAlert(true);
+    });
+
+  // ⭐ MAIN FUNCTION
   const handleCancelRide = async () => {
     if (!ride) return;
 
@@ -324,46 +392,43 @@ export default function RideDetailScreen() {
       "Ride Cancellation Attempt",
       `User trying to cancel the ride from ${ride.currentLocationName}.`
     );
+
     sendPushNotification(
       ride?.userId?.notificationToken,
       "Ride Cancellation Attempt",
       `You are trying to cancel the ride from ${ride.currentLocationName}.`
     );
 
-    let cancelMessage = "Are you sure you want to cancel this ride?";
     let fineAmount = 0;
     let fare = { totalFare: 0, driverEarnings: 0, platformShare: 0 };
     let distanceTravelled = 0;
     let cancelledLocationName = ride.currentLocationName;
     let finalMessage = "";
 
-    // ✅ Cancellation logic based on ride status
+    // SWITCH CASE — SAME AS ORIGINAL
     switch (ride.status) {
       case "Booked":
       case "Processing": {
-        // No charge for Booked or Processing
-        cancelMessage = "Are you sure you want to cancel this ride?";
+        pendingCancelMessage = "Are you sure you want to cancel this ride?";
         finalMessage = `Ride from ${ride.currentLocationName} got cancelled.`;
         break;
       }
 
       case "Arrived": {
-        // Calculate fine based on total fare range
-        if (ride.totalFare <= 200) fineAmount = 100;        // Short ride → ₹100 fine
-        else if (ride.totalFare <= 500) fineAmount = 150;   // Medium ride → ₹150 fine
-        else fineAmount = 200;                              // Long ride → ₹200 fine
+        if (ride.totalFare <= 200) fineAmount = 100;
+        else if (ride.totalFare <= 500) fineAmount = 150;
+        else fineAmount = 200;
 
         fare = {
           totalFare: fineAmount,
           driverEarnings: fineAmount,
-          platformShare: 0, // all goes to driver
+          platformShare: 0,
         };
 
-        cancelMessage = `Driver has arrived. Cancelling now will charge ₹${fineAmount} as compensation.`;
-        finalMessage = `Ride from ${ride.currentLocationName} got cancelled. Driver compensated ₹${fineAmount} for arrival and waiting time.`;
+        pendingCancelMessage = `Driver has arrived. Cancelling now will charge ₹${fineAmount} as compensation.`;
+        finalMessage = `Driver compensated ₹${fineAmount} for arrival and waiting time.`;
         break;
       }
-
 
       case "Ongoing": {
         const district = await getDistrict(
@@ -372,17 +437,18 @@ export default function RideDetailScreen() {
         );
 
         const cancelledRes = await axios.get(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${driver?.latitude},${driver?.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${driver.latitude},${driver.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`
         );
 
         cancelledLocationName =
-          cancelledRes?.data?.results?.[0]?.formatted_address || "Cancelled Location";
+          cancelledRes?.data?.results?.[0]?.formatted_address ||
+          "Cancelled Location";
 
         distanceTravelled = await calculateDistance(
           ride.currentLocation.latitude,
           ride.currentLocation.longitude,
-          driver?.latitude,
-          driver?.longitude
+          driver.latitude,
+          driver.longitude
         );
 
         const farePayload = {
@@ -391,39 +457,29 @@ export default function RideDetailScreen() {
           district: district || "Default",
         };
 
-        const { totalFare, driverEarnings, platformShare } = await calculateFare(farePayload);
-        fare = { totalFare, driverEarnings, platformShare };
+        const calcFare = await calculateFare(farePayload);
+        fare = calcFare;
 
-        cancelMessage = `You are midway. Cancelling will charge ₹${totalFare}.`;
-        finalMessage = `Ride from ${ride.currentLocationName} got cancelled. Partial fare for distance travelled: ₹${totalFare}. Refund processed accordingly.`;
+        pendingCancelMessage = `You are midway. Cancelling will charge ₹${calcFare.totalFare}.`;
+        finalMessage = `Partial fare charged: ₹${calcFare.totalFare}.`;
         break;
       }
 
-      default: {
+      default:
         Toast.show("Cannot cancel this ride at this stage.", { type: "danger" });
         return;
-      }
     }
 
-    // 🚨 Confirm cancellation
-    const userConfirmed = await new Promise((resolve) => {
-      Alert.alert(
-        "Confirm Cancellation",
-        cancelMessage,
-        [
-          { text: "No", style: "cancel", onPress: () => resolve(false) },
-          { text: "Yes", onPress: () => resolve(true) },
-        ]
-      );
-    });
-
+    // ⭐ REPLACED Alert.alert WITH CUSTOM MODAL
+    const userConfirmed = await confirmAction();
     if (!userConfirmed) return;
 
-    // ✅ Call backend
+    // CALL BACKEND
     const response = await axiosInstance.put("/ride/cancel", {
       rideId: ride.id,
       fare,
-      distanceTravelled: ride.status === "Ongoing" ? distanceTravelled : 0,
+      distanceTravelled:
+        ride.status === "Ongoing" ? distanceTravelled : 0,
       location:
         ride.status === "Ongoing"
           ? { latitude: driver.latitude, longitude: driver.longitude }
@@ -431,15 +487,21 @@ export default function RideDetailScreen() {
       cancelledLocationName,
     });
 
-    // 🔔 Push notifications
-    sendPushNotification(ride?.driverId?.notificationToken, "Ride Cancelled", finalMessage);
-    sendPushNotification(ride?.userId?.notificationToken, "Ride Cancelled", finalMessage);
+    sendPushNotification(
+      ride?.driverId?.notificationToken,
+      "Ride Cancelled",
+      finalMessage
+    );
 
-    // 🔄 Update local state
+    sendPushNotification(
+      ride?.userId?.notificationToken,
+      "Ride Cancelled",
+      finalMessage
+    );
+
     setRide(response.data.updatedRide);
     Toast.show("Ride cancelled successfully.", { type: "success" });
 
-    // 📡 Notify driver via socket
     socketService.send({
       type: "rideStatusUpdate",
       role: "user",
@@ -453,56 +515,86 @@ export default function RideDetailScreen() {
   };
 
 
+
   const handleDriverRatings = async () => {
     try {
-      // Basic validation
+      // Validation
       if (!rating) {
-        Alert.alert("Rating Required", "Please select a star rating before submitting.");
+        setAlertConfig({
+          title: "Rating Required",
+          message: "Please select a star rating before submitting.",
+          confirmText: "OK",
+          showCancel: false,
+          onCancel: () => setShowAlert(false),
+          onConfirm: () => setShowAlert(false),
+        });
+        setShowAlert(true);
         return;
       }
 
-      console.log(rating, rideId)
+      setIsSubmitting(true)
       const id = JSON.parse(rideId);
 
-
-      // Example payload
       const payload = {
-        rating,     // e.g. 4 or 5
-        rideId: id,     // optional - to link which ride this rating belongs to
+        rating,
+        rideId: id,
       };
 
-      // 🛰️ Example API call (replace with your backend endpoint)
-      const response = await axiosInstance.put('/ride/rating-driver',
+      const response = await axiosInstance.put(
+        "/ride/rating-driver",
         payload
       );
 
       if (response.status === 200 || response.status === 201) {
-        // ✅ Send push notification to the driver when user rates them
+
+        // Notify driver
         sendPushNotification(
           ride?.driverId?.notificationToken,
           "You Received a New Rating ⭐",
           `${ride?.userId?.name || "A user"} rated you ${rating} star${rating > 1 ? "s" : ""} for the recent ride from ${ride?.currentLocationName} to ${ride?.destinationLocationName}.`
         );
 
-        // ✅ Show thank-you alert to the user
-        Alert.alert("Thank You!", "Your rating has been submitted successfully.");
+        // 🎉 CUSTOM THANK YOU POPUP
+        setAlertConfig({
+          title: "Thank You!",
+          message: "Your rating has been submitted successfully.",
+          confirmText: "OK",
+          showCancel: false,
+          onConfirm: () => setShowAlert(false),
+        });
+        setShowAlert(true);
 
-        console.log("✅ Rating submitted & driver notified:", response.data);
+        // Update ride
+        setRide(response.data.updatedRide);
+        setSubmitted(true);
+
       } else {
-        Alert.alert("Error", "Failed to submit rating. Please try again later.");
+        setAlertConfig({
+          title: "Error",
+          message: "Failed to submit rating. Please try again later.",
+          confirmText: "OK",
+          showCancel: false,
+          onConfirm: () => setShowAlert(false),
+        });
+        setShowAlert(true);
       }
-
-
-      setRide(response.data.updatedRide);
-      refetchRides()
-      setSubmitted(true)
-
 
     } catch (error) {
       console.log("❌ Error submitting rating:", error);
-      Alert.alert("Error", "Something went wrong. Please try again later.");
+
+      setAlertConfig({
+        title: "Error",
+        message: "Something went wrong. Please try again later.",
+        confirmText: "OK",
+        showCancel: false,
+        onConfirm: () => setShowAlert(false),
+      });
+      setShowAlert(true);
+    } finally {
+      setIsSubmitting(false)
     }
   };
+
 
 
 
@@ -749,7 +841,10 @@ export default function RideDetailScreen() {
                 style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}
               >
                 <Text style={[styles.driverRating, { color: "#FFC107", marginRight: 8 }]}>
-                  ⭐ {driver?.rating || ride.driverId?.ratings}
+                  {renderStars(driver?.rating || ride.driverId?.ratings || 0)}
+                </Text>
+                <Text style={styles.driverRating}>
+                  {" "}•{" "}
                 </Text>
                 <Text style={styles.driverRating}>
                   Total Trips: {ride?.driverId?.totalRides}
@@ -923,7 +1018,7 @@ export default function RideDetailScreen() {
               >
                 {/* User → Driver Rating */}
                 <View style={{ alignItems: "center" }}>
-                  <Ionicons name="person-outline" size={22} color={color.primaryGray} />
+                  <Ionicons name="person-circle-outline" size={26} color={color.primaryGray} />
                   <Text
                     style={{
                       fontSize: fontSizes.FONT14,
@@ -935,22 +1030,7 @@ export default function RideDetailScreen() {
                     For You
                   </Text>
                   <View style={{ flexDirection: "row", marginTop: 5 }}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <MaterialIcons
-                        key={star}
-                        name={
-                          star <= (ride.userRating || 0)
-                            ? "star"
-                            : "star-border"
-                        }
-                        size={20}
-                        color={
-                          star <= (ride.userRating || 0)
-                            ? "#FFD700"
-                            : "#B0B0B0"
-                        }
-                      />
-                    ))}
+                    {renderStars(ride.userRating || 0)}
                   </View>
                 </View>
 
@@ -966,7 +1046,7 @@ export default function RideDetailScreen() {
 
                 {/* Driver → User Rating */}
                 <View style={{ alignItems: "center" }}>
-                  <Ionicons name="car-outline" size={22} color={color.primaryGray} />
+                  <Ionicons name="id-card-outline" size={26} color={color.primaryGray} />
                   <Text
                     style={{
                       fontSize: fontSizes.FONT14,
@@ -978,22 +1058,8 @@ export default function RideDetailScreen() {
                     For Driver
                   </Text>
                   <View style={{ flexDirection: "row", marginTop: 5 }}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <MaterialIcons
-                        key={star}
-                        name={
-                          star <= (ride.driverRating || 0)
-                            ? "star"
-                            : "star-border"
-                        }
-                        size={20}
-                        color={
-                          star <= (ride.driverRating || 0)
-                            ? "#FFD700"
-                            : "#B0B0B0"
-                        }
-                      />
-                    ))}
+                    {renderStars(ride.driverRating || 0)}
+
                   </View>
                 </View>
 
@@ -1009,7 +1075,7 @@ export default function RideDetailScreen() {
 
                 {/* Overall Ride Rating */}
                 <View style={{ alignItems: "center" }}>
-                  <Ionicons name="stats-chart-outline" size={22} color={color.primaryGray} />
+                  <Ionicons name="podium-outline" size={26} color={color.primaryGray} />
                   <Text
                     style={{
                       fontSize: fontSizes.FONT14,
@@ -1021,22 +1087,7 @@ export default function RideDetailScreen() {
                     Ride Avg
                   </Text>
                   <View style={{ flexDirection: "row", marginTop: 5 }}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <MaterialIcons
-                        key={star}
-                        name={
-                          star <= (ride.rating || 0)
-                            ? "star"
-                            : "star-border"
-                        }
-                        size={20}
-                        color={
-                          star <= (ride.rating || 0)
-                            ? "#FFD700"
-                            : "#B0B0B0"
-                        }
-                      />
-                    ))}
+                    {renderStars(ride.rating || 0)}
                   </View>
                 </View>
               </View>
@@ -1076,7 +1127,8 @@ export default function RideDetailScreen() {
                 <Button
                   onPress={handleDriverRatings}
                   style={[styles.actionButton, styles.supportButton]}
-                  title={"Submit Rating"}
+                  title={isSubmitting ? <ActivityIndicator color={color.primary} /> : "Submit Rating"}
+                  disabled={isSubmitting}
                 />
               )}
             </View>
@@ -1115,7 +1167,7 @@ export default function RideDetailScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={handleEmergency}
+                    onPress={() => router.push('/(routes)/profile/help-support')}
                     style={[styles.actionButton, styles.emergencyButton]}
                   >
                     <Text style={styles.actionButtonText}>Emergency</Text>
@@ -1126,7 +1178,7 @@ export default function RideDetailScreen() {
                 <>
                   {/* 📞 Contact Support Button */}
                   <Button
-                    onPress={handleEmergency}
+                    onPress={() => router.push('/(routes)/profile/help-support')}
                     style={[styles.actionButton, styles.supportButton]}
                     title={"Contact Support"}
                   />
@@ -1154,6 +1206,17 @@ export default function RideDetailScreen() {
           onHide={() => setModalVisible(false)}
         />
       )}
+
+      <AppAlert
+        visible={showAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onCancel={alertConfig.onCancel}
+        onConfirm={alertConfig.onConfirm}
+      />
+
     </View>
   );
 

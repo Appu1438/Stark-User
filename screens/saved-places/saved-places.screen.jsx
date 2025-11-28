@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Animated,
   RefreshControl,
   Image,
@@ -29,6 +28,7 @@ import _ from "lodash";
 import { useGetUserSavedPlaces } from "@/hooks/useGetUserData";
 import { customMapStyle } from "@/utils/map/mapStyle";
 import Images from "@/utils/images";
+import AppAlert from "@/components/modal/alert-modal/alert.modal";
 
 /* Icon selector */
 const getPlaceIcon = (label = "") => {
@@ -55,7 +55,30 @@ export default function SavedPlaces() {
   const dropdownAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef(null);
 
-  // Debounce API
+  /* ⭐ Custom global alert state */
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: "",
+    message: "",
+    confirmText: "OK",
+    showCancel: false,
+    onConfirm: () => setShowAlert(false),
+    onCancel: () => setShowAlert(false),
+  });
+
+  const triggerAlert = (config) => {
+    setAlertConfig({
+      title: config.title || "Alert",
+      message: config.message || "",
+      confirmText: config.confirmText || "OK",
+      showCancel: config.showCancel || false,
+      onConfirm: config.onConfirm || (() => setShowAlert(false)),
+      onCancel: config.onCancel || (() => setShowAlert(false)),
+    });
+    setShowAlert(true);
+  };
+
+  // ---------- Debounced Autocomplete ----------
   const fetchPlaces = async (input) => {
     try {
       const res = await axios.get(
@@ -92,12 +115,12 @@ export default function SavedPlaces() {
     }
   }, [searchQuery]);
 
-  // Select place
+  // ---------- Select Place ----------
   const handleSelectPlace = async (placeId, description) => {
     Keyboard.dismiss();
 
     setSearchQuery(description);
-    setPlaceId(placeId)
+    setPlaceId(placeId);
     setAutocompleteResults([]);
     dropdownAnim.setValue(0);
 
@@ -131,16 +154,17 @@ export default function SavedPlaces() {
     }
   };
 
-  // Save Place
+  // ---------- Save Place ----------
   const handleSavePlace = async () => {
     if (!label.trim() || !searchQuery.trim() || !location) {
-      Alert.alert("Missing Fields", "Please fill all fields correctly.");
-      return;
+      return triggerAlert({
+        title: "Missing Fields",
+        message: "Please fill all fields correctly.",
+      });
     }
 
     try {
       // setSaving(true);
-
       const payload = { label: label.trim(), address: searchQuery, location, placeId };
       await axiosInstance.post("/save-place", payload);
 
@@ -148,38 +172,43 @@ export default function SavedPlaces() {
       setSearchQuery("");
       setLocation(null);
 
-      Alert.alert(
-        "Success",
-        "Your place has been saved. Pull down to refresh the list."
-      );
-      // refetchSavedPlaces();
+      triggerAlert({
+        title: "Success",
+        message: "Your place has been saved successfully.",
+      });
     } catch (err) {
-      console.warn("Save error:", err);
-      Alert.alert("Error", "Unable to save place.");
+      triggerAlert({
+        title: "Error",
+        message: "Unable to save place.",
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  // Delete
+  // ---------- Delete Place ----------
   const handleDelete = (id) => {
-    Alert.alert("Delete", "Remove this saved place?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await axiosInstance.delete(`/save-place/${id}`);
-            // refetchSavedPlaces();
-          } catch {
-            Alert.alert("Error", "Could not delete the place.");
-          }
-        },
+    triggerAlert({
+      title: "Delete",
+      message: "Remove this saved place?",
+      confirmText: "Delete",
+      showCancel: true,
+      onConfirm: async () => {
+        setShowAlert(false);
+        try {
+          await axiosInstance.delete(`/save-place/${id}`);
+          // refetchSavedPlaces(); // Optional
+        } catch {
+          triggerAlert({
+            title: "Error",
+            message: "Could not delete the place.",
+          });
+        }
       },
-    ]);
+    });
   };
 
+  // ---------- Refresh ----------
   const onRefresh = async () => {
     setRefreshing(true);
     await refetchSavedPlaces();
@@ -200,12 +229,9 @@ export default function SavedPlaces() {
 
       <View style={{ flex: 1 }}>
         <Text style={styles.placeLabel}>{item.label}</Text>
-        <Text numberOfLines={2} style={styles.placeAddr}>
-          {item.address}
-        </Text>
+        <Text numberOfLines={2} style={styles.placeAddr}>{item.address}</Text>
       </View>
 
-      {/* Map Center Button */}
       <TouchableOpacity
         style={{ marginRight: 14 }}
         onPress={() => {
@@ -223,13 +249,13 @@ export default function SavedPlaces() {
         <Ionicons name="navigate-circle-outline" size={26} color={color.primaryText} />
       </TouchableOpacity>
 
-      {/* DELETE BUTTON (no swipe) */}
-      <TouchableOpacity onPress={() => handleDelete(item._id || item._id)}>
+      <TouchableOpacity onPress={() => handleDelete(item._id)}>
         <Ionicons name="trash-outline" size={22} color={color.primaryText} />
       </TouchableOpacity>
     </LinearGradient>
   );
 
+  /* ------------------ SHIMMER ------------------ */
   const Shimmer = ({ width, height, radius = 8, style }) => {
     const translateX = useRef(new Animated.Value(-300)).current;
 
@@ -269,153 +295,72 @@ export default function SavedPlaces() {
     );
   };
 
-  const SavedPlacesSkeleton = () => {
-    return (
-      <View style={{ paddingHorizontal: windowWidth(25), paddingTop: 40 }}>
+  const SavedPlacesSkeleton = () => (
+    <View style={{ paddingHorizontal: windowWidth(25), paddingTop: 40 }}>
+      <Shimmer width={180} height={26} radius={6} />
+      <Shimmer width={250} height={18} radius={6} style={{ marginTop: 10 }} />
 
-        {/* HEADER */}
-        <Shimmer width={180} height={26} radius={6} />
-        <Shimmer width={250} height={18} radius={6} style={{ marginTop: 10 }} />
+      <LinearGradient
+        colors={[color.darkPrimary, color.bgDark]}
+        style={{ padding: 18, borderRadius: 18, marginTop: 25 }}
+      >
+        <Shimmer width={"100%"} height={48} radius={10} />
+        <Shimmer width={"100%"} height={48} radius={10} style={{ marginTop: 16 }} />
+        <Shimmer width={"100%"} height={46} radius={10} style={{ marginTop: 16 }} />
+      </LinearGradient>
 
-        {/* FORM */}
+      <Shimmer width={"100%"} height={120} radius={12} style={{ marginTop: 20 }} />
+
+      {[1, 2, 3, 4].map((i) => (
         <LinearGradient
+          key={i}
           colors={[color.darkPrimary, color.bgDark]}
-          style={{ padding: 18, borderRadius: 18, marginTop: 25 }}
+          style={{
+            padding: 16,
+            borderRadius: 14,
+            marginTop: 16,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
         >
-          <Shimmer width={"100%"} height={48} radius={10} />
-
-          <Shimmer
-            width={"100%"}
-            height={48}
-            radius={10}
-            style={{ marginTop: 16 }}
-          />
-
-          <Shimmer
-            width={"100%"}
-            height={46}
-            radius={10}
-            style={{ marginTop: 16 }}
-          />
+          <Shimmer width={40} height={40} radius={8} />
+          <View style={{ marginLeft: 12, flex: 1 }}>
+            <Shimmer width={"60%"} height={16} radius={6} />
+            <Shimmer width={"80%"} height={14} radius={6} style={{ marginTop: 8 }} />
+          </View>
+          <Shimmer width={24} height={24} radius={6} />
         </LinearGradient>
-
-        {/* MAP PREVIEW */}
-        <Shimmer
-          width={"100%"}
-          height={120}
-          radius={12}
-          style={{ marginTop: 20 }}
-        />
-
-        {/* LIST SKELETON ITEMS */}
-        {[1, 2, 3, 4].map((i) => (
-          <LinearGradient
-            key={i}
-            colors={[color.darkPrimary, color.bgDark]}
-            style={{
-              padding: 16,
-              borderRadius: 14,
-              marginTop: 16,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Shimmer width={40} height={40} radius={8} />
-
-            <View style={{ marginLeft: 12, flex: 1 }}>
-              <Shimmer width={"60%"} height={16} radius={6} />
-              <Shimmer
-                width={"80%"}
-                height={14}
-                radius={6}
-                style={{ marginTop: 8 }}
-              />
-            </View>
-
-            <Shimmer width={24} height={24} radius={6} />
-          </LinearGradient>
-        ))}
-      </View>
-    );
-  };
+      ))}
+    </View>
+  );
 
   if (loading) return <SavedPlacesSkeleton />;
-
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View
-        style={{
-          paddingHorizontal: windowWidth(25),
-          paddingTop: windowHeight(40),
-          // paddingBottom: windowHeight(120),
-        }}
-      >
-        {/* ---------------- HEADER ---------------- */}
-        <Text
-          style={{
-            fontSize: fontSizes.FONT26,
-            color: color.primaryText,
-            fontFamily: "TT-Octosquares-Medium",
-            textAlign: "center",
-            marginBottom: 10,
-          }}
-        >
-          Saved Places
-        </Text>
-
-        <Text
-          style={{
-            fontSize: fontSizes.FONT14,
-            color: color.primaryGray,
-            textAlign: "center",
-            marginBottom: 25,
-            fontFamily: "TT-Octosquares-Medium",
-          }}
-        >
-          Add shortcuts for your favourite locations.
-        </Text>
+      <View style={{ paddingHorizontal: windowWidth(25), paddingTop: windowHeight(40) }}>
+        <Text style={styles.headerTitle}>Saved Places</Text>
+        <Text style={styles.headerSub}>Add shortcuts for your favourite locations.</Text>
       </View>
+
       <ScrollView
-        style={{
-          paddingHorizontal: windowWidth(25),
-        }}
+        style={{ paddingHorizontal: windowWidth(25) }}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#f73939"]}
-            tintColor="#f73939"
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#f73939" />
         }
       >
-
-        {/* ---------------- FORM CARD ---------------- */}
-        <LinearGradient
-          colors={[color.darkPrimary, color.bgDark]}
-          style={{
-            padding: 18,
-            borderRadius: 18,
-            marginBottom: 25,
-          }}
-        >
-          {/* Label Input */}
+        {/* ---------- FORM ---------- */}
+        <LinearGradient colors={[color.darkPrimary, color.bgDark]} style={styles.formCard}>
+          {/* Label */}
           <TextInput
             placeholder="Place Label (Home, Work, Gym...)"
             placeholderTextColor="#888"
             value={label}
             onChangeText={setLabel}
-            style={{
-              backgroundColor: "#1d1d1d",
-              padding: 12,
-              borderRadius: 10,
-              color: color.primaryText,
-              marginBottom: 12,
-              fontFamily: "TT-Octosquares-Medium",
-            }}
+            style={styles.input}
           />
 
           {/* Search Address */}
@@ -425,16 +370,9 @@ export default function SavedPlaces() {
               placeholderTextColor="#888"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              style={{
-                backgroundColor: "#1d1d1d",
-                padding: 12,
-                borderRadius: 10,
-                color: color.primaryText,
-                fontFamily: "TT-Octosquares-Medium",
-              }}
+              style={styles.input}
             />
 
-            {/* -------- Autocomplete Dropdown -------- */}
             {autocompleteResults.length > 0 && (
               <Animated.View
                 style={{
@@ -453,35 +391,24 @@ export default function SavedPlaces() {
                     onPress={() =>
                       handleSelectPlace(place.place_id, place.description)
                     }
-                    style={{
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      flexDirection: "row",
-                    }}
+                    style={styles.dropRow}
                   >
-                    <Text
-                      style={{
-                        color: "white",
-                        fontFamily: "TT-Octosquares-Medium",
-                      }}
-                    >
-                      {place.description}
-                    </Text>
+                    <Text style={styles.dropText}>{place.description}</Text>
                   </TouchableOpacity>
                 ))}
               </Animated.View>
             )}
           </View>
 
-          {/* Save Button */}
           <View style={{ marginTop: 20 }}>
             <Button
-              title={saving ? "Saving..." : "Save Place"}
+              title={saving ? <ActivityIndicator color={color.primary} /> : "Save Place"}
               onPress={handleSavePlace}
             />
           </View>
         </LinearGradient>
 
+        {/* ---------- MAP ---------- */}
         {location && (
           <View style={styles.mapWrap}>
             <MapView
@@ -507,115 +434,91 @@ export default function SavedPlaces() {
           </View>
         )}
 
-        <ScrollView
-          style={{
-            // flex:1
-          }}>
-
-
-          {/* ---------------- SAVED LIST ---------------- */}
-          <FlatList
-            data={savedPlaces || []}
-            keyExtractor={(item) => item.id?.toString() || item._id?.toString()}
-            renderItem={({ item }) => <RenderPlaceCard item={item} />}
-            contentContainerStyle={{
-              paddingBottom: 30,
-              paddingTop: 5,
-            }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={
-              <Text
-                style={{
-                  color: "#aaa",
-                  textAlign: "center",
-                  fontFamily: "TT-Octosquares-Medium",
-                  marginTop: 20,
-                }}
-              >
-                No saved places yet.
-              </Text>
-
-            }
-          />
-        </ScrollView>
-
+        {/* ---------- LIST ---------- */}
+        <FlatList
+          data={savedPlaces || []}
+          keyExtractor={(item) => item.id?.toString() || item._id?.toString()}
+          renderItem={({ item }) => <RenderPlaceCard item={item} />}
+          contentContainerStyle={{ paddingBottom: 30, paddingTop: 5 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          ListEmptyComponent={
+            <Text style={{ color: "#aaa", textAlign: "center", marginTop: 20 }}>
+              No saved places yet.
+            </Text>
+          }
+        />
       </ScrollView>
+
+      {/* ⭐ Global Reusable Alert */}
+      <AppAlert
+        visible={showAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onCancel={alertConfig.onCancel}
+        onConfirm={alertConfig.onConfirm}
+      />
     </KeyboardAvoidingView>
   );
-
 }
 
 /* ---------------------------- Styles ---------------------------- */
-
 const styles = StyleSheet.create({
   headerTitle: {
     fontSize: fontSizes.FONT26,
     color: color.primaryText,
     fontFamily: "TT-Octosquares-Medium",
+    textAlign: "center",
   },
   headerSub: {
     marginTop: 6,
     color: color.primaryGray,
     fontSize: fontSizes.FONT14,
+    textAlign: "center",
+    marginBottom: 25,
     fontFamily: "TT-Octosquares-Medium",
-    marginBottom: 18,
   },
   formCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
+    padding: 18,
+    borderRadius: 18,
+    marginBottom: 25,
   },
   input: {
-    backgroundColor: "#141414",
+    backgroundColor: "#1d1d1d",
     padding: 12,
     borderRadius: 10,
     color: color.primaryText,
+    marginBottom: 12,
     fontFamily: "TT-Octosquares-Medium",
-  },
-  dropdown: {
-    overflow: "hidden",
-    backgroundColor: "#111",
-    borderRadius: 10,
-    marginTop: 8,
   },
   dropRow: {
     paddingVertical: 10,
     paddingHorizontal: 12,
-    flexDirection: "row",
-    borderBottomColor: "rgba(255,255,255,0.05)",
-    borderBottomWidth: 1,
   },
   dropText: {
-    color: "#ddd",
+    color: "white",
     fontFamily: "TT-Octosquares-Medium",
-    fontSize: fontSizes.FONT14,
-    flex: 1,
   },
   mapWrap: {
     height: 120,
     marginTop: 10,
     borderRadius: 12,
     overflow: "hidden",
-    marginBottom: 30
+    marginBottom: 30,
   },
   mapMarker: {
     width: windowWidth(36),
     height: 36,
     tintColor: color.primaryGray,
   },
-  sectionTitle: {
-    fontSize: fontSizes.FONT18,
-    color: color.primaryText,
-    fontFamily: "TT-Octosquares-Medium",
-    marginTop: 10,
-  },
   placeCard: {
     padding: 14,
     borderRadius: 14,
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10
+    marginTop: 10,
   },
   iconWrap: {
     width: 42,

@@ -12,7 +12,7 @@ import { fontSizes, windowHeight, windowWidth } from '@/themes/app.constant';
 import MapView, { AnimatedRegion, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from "react-native-maps-directions";
 import { styles } from './styles';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Clock, Gps, LeftArrow, PickLocation, RightArrow } from '@/utils/icons';
 import color from '@/themes/app.colors';
 import PlaceHolder from '@/assets/icons/placeHolder';
@@ -42,7 +42,7 @@ import { sendPushNotification } from '@/utils/notifications/sendPushNotification
 import axiosInstance from '@/api/axiosInstance';
 import { latitude } from 'geolib';
 import { getDistrict } from '@/utils/ride/getDistrict';
-import FooterModal from '@/components/modal/footerModal/footer-Modal';
+import FooterModal from '@/components/modal/alertModal/footerModal/footer-Modal';
 import { calculateDistance } from '@/utils/ride/calculateDistance';
 import Images from '@/utils/images';
 import { customMapStyle } from '@/utils/map/mapStyle';
@@ -52,6 +52,7 @@ import RideLocationSelector from '@/components/ride-plan/ride.location';
 import RideRoute from '@/components/ride-plan/ride.route';
 import SkeletonRidePlan from './ride-plan-skelton.screen';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import AppAlert from '@/components/modal/alert-modal/alert.modal';
 
 export default function RidePlanScreen() {
   const mapRef = useRef(null);
@@ -95,7 +96,7 @@ export default function RidePlanScreen() {
 
   // const [selectedDriver, setselectedDriver] = useState<DriverType>();
   const [driverLoader, setdriverLoader] = useState(true);
-  const [watingForBookingResponse, setwatingForBookingResponse] = useState(false);
+  const [watingForBookingResponse, setWaitingForBookingResponse] = useState(false);
 
   const vehicleImages = {
     Auto: require("@/assets/images/vehicles/auto.png"),
@@ -115,6 +116,44 @@ export default function RidePlanScreen() {
   const [modalMessage, setModalMessage] = useState("");
   const [modalSubMessage, setModalSubMessage] = useState("");
   const [modalType, setModalType] = useState("success");
+
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: "",
+    message: "",
+    confirmText: "OK",
+    showCancel: false,
+    onConfirm: () => setShowAlert(false),
+  });
+
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (watingForBookingResponse) {
+          // Show your custom AppAlert
+          setAlertConfig({
+            title: "Please Wait",
+            message: "We are processing your booking request. Do not exit this screen.",
+            confirmText: "OK",
+            showCancel: false,
+            onConfirm: () => setShowAlert(false),
+          });
+          setShowAlert(true);
+
+          return true; // block back press
+        }
+
+        // Allow normal back behaviour
+        return false;
+      };
+
+      if (Platform.OS === "android") {
+        const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+        return () => sub.remove();
+      }
+    }, [watingForBookingResponse])
+  );
 
 
   //Keyboard Settings
@@ -466,7 +505,7 @@ export default function RidePlanScreen() {
         "Ride Request Sent",
         "Finding a driver for you Don't press back button."
       );
-      // setwatingForBookingResponse(true)
+      setWaitingForBookingResponse(true)
       // Fetch addresses
       // const [pickupRes, dropoffRes] = await Promise.all([
       //   axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${currentLocation.latitude},${currentLocation.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`),
@@ -515,7 +554,7 @@ export default function RidePlanScreen() {
             setModalType("error");
             setModalVisible(true);
 
-            setwatingForBookingResponse(false);
+            setWaitingForBookingResponse(false);
           }
           return;
         }
@@ -569,7 +608,7 @@ export default function RidePlanScreen() {
 
       tryNextDriver(); // Start with first driver
     } catch (error) {
-      setwatingForBookingResponse(false)
+      setWaitingForBookingResponse(false)
       console.error(error);
       Toast.show("Something went wrong. Please try again.", { type: "danger" });
     }
@@ -629,7 +668,7 @@ export default function RidePlanScreen() {
             handleOrder={handleOrder}
             watingForBookingResponse={watingForBookingResponse}
             setlocationSelected={setlocationSelected}
-            setWaitingForResponse={setwatingForBookingResponse}
+            setWaitingForResponse={setWaitingForBookingResponse}
             setExpansion={setExpanded}
           />
         ) : (
@@ -655,6 +694,9 @@ export default function RidePlanScreen() {
             query={query}
             isFindingLocation={findingLocation}
             setExpansion={setExpanded}
+            isWaitingForResponse={watingForBookingResponse}
+            setAlertConfig={setAlertConfig}
+            setShowAlert={setShowAlert}
 
           />
 
@@ -673,6 +715,15 @@ export default function RidePlanScreen() {
         )}
 
       </View>
+      <AppAlert
+        visible={showAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        confirmText={alertConfig.confirmText}
+        showCancel={alertConfig.showCancel}
+        onConfirm={alertConfig.onConfirm}
+      />
+
     </BottomSheetModalProvider>
   );
 }

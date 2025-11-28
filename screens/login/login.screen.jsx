@@ -1,4 +1,4 @@
-import { View, Text, Image, Platform } from 'react-native'
+import { View, Text, Image, Platform, ActivityIndicator } from 'react-native'
 import React, { useState } from 'react'
 import AuthContainer from '@/utils/container/auth-container'
 import { windowHeight } from '@/themes/app.constant'
@@ -15,25 +15,22 @@ import { useFocusEffect } from '@react-navigation/native';
 import { BackHandler, Alert } from 'react-native';
 import { useCallback } from 'react';
 import axiosInstance from '@/api/axiosInstance'
+import color from '@/themes/app.colors'
+import AppAlert from '@/components/modal/alert-modal/alert.modal'
 export default function LoginScreen() {
   const [phone_number, setphone_number] = useState("");
   const [loading, setloading] = useState(false);
   const [countryCode, setCountryCode] = useState("91");
   const toast = useToast();
 
+  const [showAlert, setShowAlert] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        Alert.alert(
-          "Exit App",
-          "Are you sure you want to exit?",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Exit", onPress: () => BackHandler.exitApp() },
-          ],
-          { cancelable: true }
-        );
-        return true; // Prevent default back behavior
+        setPendingExit(true);    // show exit alert modal
+        setShowAlert(true);      // open modal
+        return true;             // block default behavior
       };
 
       if (Platform.OS === "android") {
@@ -41,12 +38,11 @@ export default function LoginScreen() {
           "hardwareBackPress",
           onBackPress
         );
-
-        // Cleanup on unmount
         return () => subscription.remove();
       }
     }, [])
   );
+
 
   const handleSubmit = async () => {
     if (!phone_number || !countryCode) {
@@ -111,13 +107,27 @@ export default function LoginScreen() {
               />
               <View style={[external.mt_25, external.Pb_15]}>
                 <Button
-                  title={loading ? "Sending OTP" : 'Get OTP'}
+                  title={loading ? <ActivityIndicator color={color.primary} /> : 'Get OTP'}
                   onPress={() => handleSubmit()}
                   disabled={loading}
                 />
               </View>
             </View>
           </View>
+          <AppAlert
+            visible={showAlert}
+            title="Exit App"
+            message="Are you sure you want to exit?"
+            cancelText="Cancel"
+            confirmText="Exit"
+            onCancel={() => {
+              setShowAlert(false);
+            }}
+            onConfirm={() => {
+              setShowAlert(false);
+              setTimeout(() => BackHandler.exitApp(), 100);
+            }}
+          />
         </View>
       }
     />

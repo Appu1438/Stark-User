@@ -9,6 +9,13 @@
     "userInterfaceStyle": "light",
     "plugins": [
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo/IconOnly.png",
+          "color": "#ffffff"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#000000",
@@ -38,9 +45,12 @@
       "versionCode": 1,
       "enableSeparateBuildPerArchitecture": true,
       "enableProguardInReleaseBuilds": true,
+      "googleServicesFile": "./android/app/google-services.json",
+      "useNextNotificationsApi": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "NOTIFICATIONS"
       ],
       "config": {
         "googleMaps": {

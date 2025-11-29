@@ -97,7 +97,7 @@ export default function EmailVerificationScreen() {
               disabled={loader}
             />
           </View>
-          {/* <View style={[external.mb_15]}>
+          <View style={[external.mb_15]}>
             <View
               style={[
                 external.pt_10,
@@ -108,13 +108,15 @@ export default function EmailVerificationScreen() {
               <Text style={[commonStyles.regularText, {
                 fontFamily: 'TT-Octosquares-Medium',
               }]}>Not Received yet?</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => {
+                router.back()
+              }}>
                 <Text style={[style.signUpText]}>
                   Resend it
                 </Text>
               </TouchableOpacity>
             </View>
-          </View> */}
+          </View>
         </View>
       }
     />

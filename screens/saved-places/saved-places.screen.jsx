@@ -50,6 +50,8 @@ export default function SavedPlaces() {
   const [location, setLocation] = useState(null);
   const [placeId, setPlaceId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const dropdownAnim = useRef(new Animated.Value(0)).current;
@@ -188,6 +190,15 @@ export default function SavedPlaces() {
 
   // ---------- Delete Place ----------
   const handleDelete = (id) => {
+    // 🚫 Prevent deleting another item while one is already deleting
+    if (deletingId !== null) {
+      triggerAlert({
+        title: "Please Wait",
+        message: "Another place is being deleted. Please wait...",
+        confirmText: "OK",
+      });
+      return;
+    }
     triggerAlert({
       title: "Delete",
       message: "Remove this saved place?",
@@ -195,18 +206,26 @@ export default function SavedPlaces() {
       showCancel: true,
       onConfirm: async () => {
         setShowAlert(false);
+        setDeletingId(id);   // 🔥 mark this item as loading
+
         try {
           await axiosInstance.delete(`/save-place/${id}`);
-          // refetchSavedPlaces(); // Optional
-        } catch {
+
+          // Optionally refetch
+          // refetchSavedPlaces();
+
+        } catch (error) {
           triggerAlert({
             title: "Error",
             message: "Could not delete the place.",
           });
+        } finally {
+          setDeletingId(null); // reset loading state
         }
       },
     });
   };
+
 
   // ---------- Refresh ----------
   const onRefresh = async () => {
@@ -249,9 +268,18 @@ export default function SavedPlaces() {
         <Ionicons name="navigate-circle-outline" size={26} color={color.primaryText} />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => handleDelete(item._id)}>
-        <Ionicons name="trash-outline" size={22} color={color.primaryText} />
+      <TouchableOpacity
+        onPress={() => handleDelete(item._id)}
+        disabled={deletingId === item._id}   // prevent double press
+        style={{ width: 22, alignItems: "center" }}
+      >
+        {deletingId === item._id ? (
+          <ActivityIndicator size={18} color={color.primaryText} />
+        ) : (
+          <Ionicons name="trash-outline" size={22} color={color.primaryText} />
+        )}
       </TouchableOpacity>
+
     </LinearGradient>
   );
 

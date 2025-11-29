@@ -10,6 +10,7 @@ import {
   Platform,
   StyleSheet,
   Keyboard,
+  TextInput,
 } from "react-native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { Clock, Gps, LeftArrow, RightArrow, Location } from "@/utils/icons";
@@ -275,122 +276,84 @@ export default function RideLocationSelector({
         >
           {/* FROM LOCATION */}
           <View style={{ flexDirection: "row" }}>
-            <Location colors={color.primaryGray} />
+            <View style={{ marginTop: windowHeight(4.5) }}>
+              <Location colors={color.primaryGray} />
+            </View>
 
             <View
               style={{
                 borderBottomWidth: 1,
                 borderBottomColor: color.primaryGray,
                 width: Dimensions.get("window").width - 110,
-                marginLeft: 5,
-                height: windowHeight(30),
+                marginLeft: windowWidth(15),
+                marginTop: windowHeight(-4),
+                height: windowHeight(35),
               }}
             >
-              <GooglePlacesAutocomplete
-                ref={fromSearchInputRef}
-                placeholder={isFindingLocation ? "Fetching location..." : currentLocationName}
-                onPress={(data) => {
-                  if (isFindingLocation) return;        // 🚫 ignore presses
-                  setFromPlaces([{ ...data }]);
-                }}
-                query={{
-                  key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
-                  language: "en",
-                }}
-                textInputProps={{
-                  onChangeText: (text) => {
-                    if (!isFindingLocation) setFromQuery(text);   // 🚫 disable typing
-                  },
-                  editable: !isFindingLocation,                   // 🔐 disable input box
-                  value: fromQuery,
-                  onFocus: () => {
-                    if (!isFindingLocation) {
-                      // setkeyboardAvoidingHeight(true);
-                      snapTo("FULL");
-                    }
-                  },
-                  onBlur: () => {
-                    // setkeyboardAvoidingHeight(false)
-                    // , snapTo("COLLAPSED");
 
-                  },
-                  placeholderTextColor: color.primaryText,
+              <TextInput
+                ref={fromSearchInputRef}
+                style={{
+                  height: windowHeight(30),
+                  color: isFindingLocation ? "#777" : color.primaryText,
+                  fontSize: fontSizes.FONT15,
+                  fontFamily: "TT-Octosquares-Medium",
+                  backgroundColor: color.subPrimary,
                 }}
-                fetchDetails={!isFindingLocation}                 // 🚫 block API calls
-                styles={{
-                  textInput: {
-                    height: 30,
-                    color: isFindingLocation ? "#777" : color.primaryText, // dim color when disabled
-                    fontSize: fontSizes.FONT15,
-                    fontFamily: "TT-Octosquares-Medium",
-                    backgroundColor: color.subPrimary,
-                  },
+                placeholder={isFindingLocation ? "Fetching location..." : currentLocationName}
+                placeholderTextColor={color.primaryText}
+                editable={!isFindingLocation}
+                value={fromQuery}
+                // autoCapitalize="true"
+                onFocus={() => {
+                  if (!isFindingLocation) snapTo("FULL");
                 }}
-                debounce={200}
-                predefinedPlaces={[]}
+                onChangeText={(text) => {
+                  setFromQuery(text);
+                }}
               />
             </View>
           </View>
 
+
           {/* TO LOCATION */}
-          <View
-            style={{
-              flexDirection: "row",
-              paddingVertical: 12,
-            }}
-          >
-            <Gps colors={color.primaryGray} />
+          <View style={{ flexDirection: "row", }}>
+            <View style={{ marginTop: windowHeight(12) }}>
+              <Gps colors={color.primaryGray} />
+            </View>
 
             <View
               style={{
-                marginLeft: 5,
                 width: Dimensions.get("window").width - 110,
+                marginLeft: windowWidth(15),
+                marginTop: windowHeight(5),
+                height: windowHeight(35),
               }}
             >
-              <GooglePlacesAutocomplete
+              <TextInput
                 ref={toSearchInputRef}
+                style={{
+                  height: windowHeight(30),
+                  color: isFindingLocation ? "#777" : color.primaryText,
+                  fontSize: fontSizes.FONT15,
+                  fontFamily: "TT-Octosquares-Medium",
+                  backgroundColor: color.subPrimary,
+                }}
                 placeholder={destLocationName}
-                onPress={(data) => {
-                  if (isFindingLocation) return;
-                  setPlaces([{ ...data }]);
+                placeholderTextColor={color.primaryText}
+                editable={!isFindingLocation}
+                value={query}
+                // autoCapitalize="none"
+                onFocus={() => {
+                  if (!isFindingLocation) snapTo("FULL");
                 }}
-                query={{
-                  key: process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY,
-                  language: "en",
+                onChangeText={(text) => {
+                  setQuery(text);
                 }}
-                textInputProps={{
-                  onChangeText: (text) => {
-                    if (!isFindingLocation) setQuery(text);
-                  },
-                  editable: !isFindingLocation,
-                  value: query,
-                  onFocus: () => {
-                    if (!isFindingLocation) {
-                      // setkeyboardAvoidingHeight(true);
-                      snapTo("FULL");
-                    }
-                  },
-                  onBlur: () => {
-                    // setkeyboardAvoidingHeight(false)
-                    // ,snapTo("COLLAPSED");
-                  },
-                  placeholderTextColor: color.primaryText,
-                }}
-                fetchDetails={!isFindingLocation}
-                styles={{
-                  textInput: {
-                    height: 30,
-                    color: isFindingLocation ? "#777" : color.primaryText,
-                    fontSize: fontSizes.FONT15,
-                    fontFamily: "TT-Octosquares-Medium",
-                    backgroundColor: color.subPrimary,
-                  },
-                }}
-                debounce={200}
-                predefinedPlaces={[]}
               />
             </View>
           </View>
+
         </View>
 
         {/* Content: saved places & suggestions.
@@ -467,7 +430,7 @@ export default function RideLocationSelector({
               ))}
             </>
           )}
-          
+
           {/* Saved Places */}
           {!isFindingLocation && (
             <>
@@ -488,7 +451,7 @@ export default function RideLocationSelector({
 
         </Animated.ScrollView>
       </View>
-    </Animated.View>
+    </Animated.View >
   );
 }
 

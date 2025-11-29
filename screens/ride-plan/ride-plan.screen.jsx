@@ -356,8 +356,9 @@ export default function RidePlanScreen() {
   const handlePlaceSelect = async (placeId, description) => {
     Keyboard.dismiss();
     setDestLocationName(description);
+    setQuery(description)
     try {
-      toSearchInputRef.current?.setAddressText(description);
+      // toSearchInputRef.current?.setAddressText(description);
 
       const res = await axios.get(`https://maps.googleapis.com/maps/api/place/details/json`, {
         params: {
@@ -391,9 +392,10 @@ export default function RidePlanScreen() {
   const handleFromPlaceSelect = async (placeId, description) => {
     Keyboard.dismiss();
     setCurrentLocationName(description);
+    setFromQuery(description)
     try {
 
-      fromSearchInputRef.current?.setAddressText(description);
+      // fromSearchInputRef.current?.setAddressText(description);
 
       const res = await axios.get(`https://maps.googleapis.com/maps/api/place/details/json`, {
         params: {

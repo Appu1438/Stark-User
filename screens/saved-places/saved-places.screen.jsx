@@ -46,9 +46,11 @@ export default function SavedPlaces() {
 
   const [label, setLabel] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
   const [autocompleteResults, setAutocompleteResults] = useState([]);
   const [location, setLocation] = useState(null);
   const [placeId, setPlaceId] = useState(null);
+
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
@@ -82,6 +84,7 @@ export default function SavedPlaces() {
 
   // ---------- Debounced Autocomplete ----------
   const fetchPlaces = async (input) => {
+    console.log(input)
     try {
       const res = await axios.get(
         "https://maps.googleapis.com/maps/api/place/autocomplete/json",
@@ -110,7 +113,7 @@ export default function SavedPlaces() {
   const debouncedFetchPlaces = useCallback(_.debounce(fetchPlaces, 250), []);
 
   useEffect(() => {
-    if (searchQuery.length > 2) debouncedFetchPlaces(searchQuery);
+    if (searchQuery.length > 2 && searchQuery !== selectedLocation) debouncedFetchPlaces(searchQuery);
     else {
       setAutocompleteResults([]);
       dropdownAnim.setValue(0);
@@ -122,6 +125,7 @@ export default function SavedPlaces() {
     Keyboard.dismiss();
 
     setSearchQuery(description);
+    setSelectedLocation(description)
     setPlaceId(placeId);
     setAutocompleteResults([]);
     dropdownAnim.setValue(0);
@@ -166,7 +170,7 @@ export default function SavedPlaces() {
     }
 
     try {
-      // setSaving(true);
+      setSaving(true);
       const payload = { label: label.trim(), address: searchQuery, location, placeId };
       await axiosInstance.post("/save-place", payload);
 
@@ -377,7 +381,7 @@ export default function SavedPlaces() {
       <ScrollView
         style={{ paddingHorizontal: windowWidth(25) }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#f73939" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {/* ---------- FORM ---------- */}
@@ -432,6 +436,7 @@ export default function SavedPlaces() {
             <Button
               title={saving ? <ActivityIndicator color={color.primary} /> : "Save Place"}
               onPress={handleSavePlace}
+              disabled={saving}
             />
           </View>
         </LinearGradient>

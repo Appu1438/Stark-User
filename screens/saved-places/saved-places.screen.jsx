@@ -212,7 +212,7 @@ export default function SavedPlaces() {
           await axiosInstance.delete(`/save-place/${id}`);
 
           // Optionally refetch
-          // refetchSavedPlaces();
+          refetchSavedPlaces();
 
         } catch (error) {
           triggerAlert({

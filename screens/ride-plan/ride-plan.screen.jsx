@@ -53,6 +53,7 @@ import SkeletonRidePlan from './ride-plan-skelton.screen';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AppAlert from '@/components/modal/alert-modal/alert.modal';
 import FooterModal from '@/components/modal/footer-modal/footer.modal';
+import { checkUserActiveRide } from '@/utils/ride/checkActiveRide';
 
 export default function RidePlanScreen() {
   const mapRef = useRef(null);
@@ -500,20 +501,44 @@ export default function RidePlanScreen() {
     }
 
     try {
+
+      setWaitingForBookingResponse(true)
+
+      const { hasActiveRide, ride } = await checkUserActiveRide();
+
+      if (hasActiveRide) {
+        // Show AppAlert or Toast
+        setModalMessage("You already have an ongoing ride!");
+        setModalSubMessage("Please finish or cancel your current ride before booking a new one.");
+        setModalType("error");
+        setModalVisible(true);
+
+        setWaitingForBookingResponse(false)
+
+        setTimeout(() => {
+          router.replace({
+            pathname: "/(routes)/ride-details",
+            params: { rideId: JSON.stringify(ride.id) },
+          });
+        }, 3000);
+
+        return; // stop order flow
+      }
+    } catch (error) {
+
+      console.log("Active ride check failed:", error);
+      Toast.show("Could not verify ride status. Please try again.", { type: "danger" });
+      setWaitingForBookingResponse(false)
+
+      return;
+    }
+
+    try {
       sendPushNotification(
         user?.notificationToken,
         "Ride Request Sent",
         "Finding a driver for you Don't press back button."
       );
-      setWaitingForBookingResponse(true)
-      // Fetch addresses
-      // const [pickupRes, dropoffRes] = await Promise.all([
-      //   axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${currentLocation.latitude},${currentLocation.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`),
-      //   axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${marker.latitude},${marker.longitude}&key=${process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}`),
-      // ]);
-
-      // const currentLocationName = pickupRes?.data?.results?.[0]?.formatted_address || "Pickup Location";
-      // const destinationLocationName = dropoffRes?.data?.results?.[0]?.formatted_address || "Dropoff Location";
 
 
       const fareDetails = await calculateFare({

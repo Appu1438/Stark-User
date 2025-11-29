@@ -50,6 +50,8 @@ export default function RideDetailScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [isCancelling, setIsCancelling] = useState(false);
+
   const [remainingDistance, setRemainingDistance] = useState(0);
 
 
@@ -387,6 +389,7 @@ export default function RideDetailScreen() {
   const handleCancelRide = async () => {
     if (!ride) return;
 
+    setIsCancelling(true)
     sendPushNotification(
       ride?.driverId?.notificationToken,
       "Ride Cancellation Attempt",
@@ -472,7 +475,10 @@ export default function RideDetailScreen() {
 
     // ⭐ REPLACED Alert.alert WITH CUSTOM MODAL
     const userConfirmed = await confirmAction();
-    if (!userConfirmed) return;
+    if (!userConfirmed) {
+      setIsCancelling(false)
+      return;
+    }
 
     // CALL BACKEND
     const response = await axiosInstance.put("/ride/cancel", {
@@ -512,6 +518,8 @@ export default function RideDetailScreen() {
       },
       status: response.data.updatedRide.status,
     });
+
+    setIsCancelling(false)
   };
 
 
@@ -1146,17 +1154,24 @@ export default function RideDetailScreen() {
                     ride.status === "Ongoing") && (
                       <TouchableOpacity
                         onPress={handleCancelRide}
+                        disabled={isCancelling}
                         style={[
                           styles.actionButton,
                           ride.status === "Ongoing"
                             ? styles.midwayCancelButton
                             : styles.cancelButton,
+                          isCancelling && { opacity: 0.6 } // optional visual feedback
                         ]}
                       >
-                        <Text style={styles.actionButtonText}>
-                          {ride.status === "Ongoing" ? "Cancel Midway" : "Cancel Ride"}
-                        </Text>
+                        {isCancelling ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Text style={styles.actionButtonText}>
+                            {ride.status === "Ongoing" ? "Cancel Midway" : "Cancel Ride"}
+                          </Text>
+                        )}
                       </TouchableOpacity>
+
                     )}
 
                   <TouchableOpacity

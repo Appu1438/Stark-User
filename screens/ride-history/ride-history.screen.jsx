@@ -38,8 +38,7 @@ export default function RideHistoryScreen() {
                 <RefreshControl
                     refreshing={refreshing}
                     onRefresh={onRefresh}
-                    colors={["#f73939"]}
-                    tintColor="#f73939"
+                    tintColor={color.primary}
                 />
             }
         >

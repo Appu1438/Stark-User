@@ -28,7 +28,10 @@ const SNAP = {
 };
 
 export default function RideLocationSelector({
+  toggleUserLocation,
   router,
+  userLocation,
+  userLocationName,
   currentLocation,
   marker,
   setlocationSelected,
@@ -36,8 +39,6 @@ export default function RideLocationSelector({
   destLocationName = "Where to?",
   fromSearchInputRef,
   toSearchInputRef,
-  setFromPlaces,
-  setPlaces,
   fromPlaces = [],
   places = [],
   handleFromPlaceSelect,
@@ -51,6 +52,7 @@ export default function RideLocationSelector({
   setAlertConfig,
   setShowAlert
 }) {
+
   // saved places
   const { loading: savedLoading, savedPlaces = [] } = useGetUserSavedPlaces();
 
@@ -58,6 +60,18 @@ export default function RideLocationSelector({
   const sheetAnim = useRef(new Animated.Value(0)).current; // 0 collapsed, 1 full
   const [expanded, setExpanded] = useState(false); // full-screen?
   const [isPanning, setIsPanning] = useState(false); // block inner scroll while pan
+
+  const [pickupPlaceholder, setPickupPlaceholder] = useState(currentLocationName); // block inner scroll while pan
+
+  useEffect(() => {
+    let pickupPlaceholder = isFindingLocation
+      ? "Fetching location..."
+      : currentLocationName === userLocationName
+        ? `${currentLocationName} (Current Location)`
+        : currentLocationName;
+
+    setPickupPlaceholder(pickupPlaceholder)
+  }, [toggleUserLocation, currentLocationName, isFindingLocation])
 
   // map sheetAnim to height and border radius (no translateY)
   const sheetHeight = sheetAnim.interpolate({
@@ -142,14 +156,6 @@ export default function RideLocationSelector({
     })
   ).current;
 
-  // When input focuses — expand
-  const handleFocusFrom = () => {
-    snapTo("HALF");
-  };
-  const handleFocusTo = () => {
-    snapTo("HALF");
-  };
-
   // toggle behavior for handle
   const toggleHandle = () =>
     sheetAnim.stopAnimation((val) => {
@@ -177,24 +183,6 @@ export default function RideLocationSelector({
       </View>
     </Pressable>
   );
-
-  // Should we show saved places? hide when typing in either input
-  const isTyping = (!isFindingLocation) && (
-    (fromQuery && fromQuery.trim().length > 0) ||
-    (query && query.trim().length > 0)
-  );
-
-  // Safe GooglePlacesAutocomplete styles (required keys present)
-  const gpStyles = {
-    container: { flex: 1 },
-    textInputContainer: { width: "100%", backgroundColor: "transparent", padding: 0, margin: 0 },
-    textInput: { height: 40, color: color.primaryText, fontSize: fontSizes.FONT15, fontFamily: "TT-Octosquares-Medium", backgroundColor: "transparent", },
-    listView: { backgroundColor: color.subPrimary },
-    row: { padding: 10, borderBottomWidth: 0 },
-    separator: { height: 0.5, backgroundColor: color.primaryText },
-    description: { color: color.primaryText },
-    loader: { color: color.primaryText },
-  };
 
   return (
     <Animated.View
@@ -300,7 +288,7 @@ export default function RideLocationSelector({
                   fontFamily: "TT-Octosquares-Medium",
                   backgroundColor: color.subPrimary,
                 }}
-                placeholder={isFindingLocation ? "Fetching location..." : currentLocationName}
+                placeholder={pickupPlaceholder}
                 placeholderTextColor={color.primaryText}
                 editable={!isFindingLocation}
                 value={fromQuery}
@@ -370,6 +358,35 @@ export default function RideLocationSelector({
             if (!expanded) snapTo("HALF");
           }}
         >
+          {!isFindingLocation && userLocation && (
+            <Pressable
+              style={{
+                padding: 5,
+                borderRadius: 10,
+                // backgroundColor: color.primaryGray,
+                marginBottom: 10,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+              onPress={() => {
+                // Trigger reset
+                toggleUserLocation(prev => !prev);
+
+                // Clear user typed text
+                setFromQuery("");
+
+                // Collapse sheet if needed
+                snapTo("COLLAPSED");
+              }}
+            >
+              <Location colors={color.primaryText} />
+              <Text style={{ marginLeft: 10, color: color.primaryText, fontSize: fontSizes.FONT15, fontFamily: "TT-Octosquares-Medium" }}>
+                Use Current Location
+              </Text>
+            </Pressable>
+
+          )}
+
           {/* From suggestions */}
           {fromPlaces?.length > 0 && (
             <>

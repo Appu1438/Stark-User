@@ -90,8 +90,8 @@ export default function RideRoute({
         provider={PROVIDER_GOOGLE}
         customMapStyle={customMapStyle}
         scrollEnabled={!expanded}
-        rotateEnabled={!expanded}
-        pitchEnabled={!expanded}
+        rotateEnabled={false}
+        pitchEnabled={false}
         zoomEnabled={!expanded}
       >
         {/* keep your routes / drivers / markers (icon-only) here */}

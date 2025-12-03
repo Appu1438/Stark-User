@@ -74,7 +74,7 @@ export default function Complaints() {
     } finally {
       setTimeout(() => {
         setLoadingComplaints(false);
-      }, 2000);
+      }, 0);
     }
   };
 

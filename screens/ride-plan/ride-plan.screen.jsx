@@ -54,18 +54,21 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AppAlert from '@/components/modal/alert-modal/alert.modal';
 import FooterModal from '@/components/modal/footer-modal/footer.modal';
 import { checkUserActiveRide } from '@/utils/ride/checkActiveRide';
+import { vehicleImages, vehicleNames } from '@/configs/constants';
+import { useUserLocationStore } from '@/store/userLocationStore';
 
 export default function RidePlanScreen() {
   const mapRef = useRef(null);
   const fromSearchInputRef = useRef(null);
   const toSearchInputRef = useRef(null);
 
-  const { loading, user } = useGetUserData()
+  const { user } = useGetUserData()
 
 
   const [expanded, setExpanded] = useState(false);
-  const [findingLocation, setFindingLocation] = useState(true);
 
+  // const [findingLocation, setFindingLocation] = useState();
+  const [toggleUserLocation, setToggleUserLocation] = useState(false);
   const [currentLocationName, setCurrentLocationName] = useState("From (Current Location)");
   const [destLocationName, setDestLocationName] = useState("Where to?");
   const [places, setPlaces] = useState([]);
@@ -83,7 +86,6 @@ export default function RidePlanScreen() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [distance, setDistance] = useState(null);
   const [locationSelected, setlocationSelected] = useState(false);
-  const [keyboardAvoidingHeight, setkeyboardAvoidingHeight] = useState(false);
   const [selectedVehcile, setselectedVehcile] = useState("");
   const [travelTimes, setTravelTimes] = useState({
     driving: null,
@@ -91,27 +93,12 @@ export default function RidePlanScreen() {
     bicycling: null,
     transit: null,
   });
-  // const [driverLists, setDriverLists] = useState([]);
   const driverLists = useDriverStore.getState().driverLists;
   const { setDriverLists, updateDriverLocation } = useDriverStore();
 
-  // const [selectedDriver, setselectedDriver] = useState<DriverType>();
   const [driverLoader, setdriverLoader] = useState(true);
   const [watingForBookingResponse, setWaitingForBookingResponse] = useState(false);
 
-  const vehicleImages = {
-    Auto: require("@/assets/images/vehicles/auto.png"),
-    Sedan: require("@/assets/images/vehicles/sedan.png"),
-    Suv: require("@/assets/images/vehicles/suv.png"),
-    Hatchback: require("@/assets/images/vehicles/hatchback.png"),
-  };
-
-  const vehicleNames = {
-    Auto: "Stark Mini",
-    Sedan: "Stark Prime",
-    Hatchback: "Stark Zip",
-    Suv: "Stark Max",
-  };
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
@@ -156,91 +143,29 @@ export default function RidePlanScreen() {
     }, [watingForBookingResponse])
   );
 
-
-  //Keyboard Settings
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-        if (fromSearchInputRef.current?.isFocused?.()) {
-          fromSearchInputRef.current?.blur?.(); // manually blur on soft back
-          setkeyboardAvoidingHeight(false); // your onBlur logic
-        } else if (toSearchInputRef.current?.isFocused?.()) {
-          toSearchInputRef.current?.blur?.(); // manually blur on soft back
-          setkeyboardAvoidingHeight(false); // your onBlur logic
-        }
-      });
-
-      return () => keyboardDidHideListener.remove();
-    }
-  }, []);
-
   //Location Setups
+  const {
+    userLocation,
+    userLocationName,
+    userDistrict,
+    userRegion,
+    findingLocation,
+    fetchLocation,
+  } = useUserLocationStore();
+
   useEffect(() => {
-    (async () => {
-      try {
-        setFindingLocation(true); // Start loader
+    fetchLocation(mapRef, getDistrict);
+  }, [toggleUserLocation]);
 
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          Toast.show("Location permission denied. Enable it to use this feature.", {
-            type: "danger",
-            placement: "bottom",
-          });
-          return;
-        }
-
-        const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-        const { latitude, longitude } = location.coords;
-        const coords = { latitude, longitude };
-        const [place] = await Location.reverseGeocodeAsync(coords);
-        console.log(place)
-        // This gives fields like: { city, district, region, name, street, postalCode, country }
-
-        // 🏙️ Build a readable location name
-        const locationName =
-          place?.street ||
-          place?.city ||
-          place?.name ||
-          place?.district ||
-          place?.region ||
-          "Unknown Location";
-
-        // 🏢 Optional: call your district function
-        getDistrict(latitude, longitude, setDistrict);
-
-        // 📍 Set the location + name
-        setCurrentLocation(coords);
-        setCurrentLocationName(locationName);
-        setRegion(prev => ({
-          ...prev,
-          latitude,
-          longitude,
-        }));
-
-        // Animate after a slight delay to smoothen UX on iOS
-        setTimeout(() => {
-          mapRef.current?.animateToRegion({
-            latitude,
-            longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }, 1000);
-        }, 200); // 200ms delay
-      } catch (error) {
-        console.error("Location fetch error:", error);
-        Toast.show("Unable to retrieve location. Please try again.", {
-          type: "danger",
-          placement: "bottom",
-        });
-      } finally {
-        setFindingLocation(false); // Stop loader
-      }
-    })();
-  }, []);
+  useEffect(() => {
+    setCurrentLocation(userLocation)
+    setCurrentLocationName(userLocationName)
+    setRegion(userRegion)
+    setDistrict(userDistrict)
+  }, [userLocation]);
 
 
   //Socket
-
   useEffect(() => {
     socketService.onNearbyDrivers(async (driversFromSocket) => {
       if (!driversFromSocket || driversFromSocket.length === 0) {
@@ -382,7 +307,6 @@ export default function RidePlanScreen() {
       }); setPlaces([]);
       // requestNearbyDrivers()
       setlocationSelected(true);
-      setkeyboardAvoidingHeight(false);
       if (currentLocation) await fetchTravelTimes(currentLocation, coords);
     } catch (err) {
       console.log(err);
@@ -416,7 +340,6 @@ export default function RidePlanScreen() {
       setRegion(newRegion);
       mapRef.current?.animateToRegion(newRegion, 1000);
       setFromPlaces([]);
-      setkeyboardAvoidingHeight(false);
       if (marker) {
         mapRef.current?.fitToCoordinates([currentLocation, marker], {
           edgePadding: { top: 100, bottom: 100, left: 100, right: 100 },
@@ -700,7 +623,10 @@ export default function RidePlanScreen() {
           />
         ) : (
           <RideLocationSelector
+            toggleUserLocation={setToggleUserLocation}
             router={router}
+            userLocation={userLocation}
+            userLocationName={userLocationName}
             currentLocation={currentLocation}
             marker={marker}
             setlocationSelected={setlocationSelected}
@@ -708,13 +634,10 @@ export default function RidePlanScreen() {
             destLocationName={destLocationName}
             fromSearchInputRef={fromSearchInputRef}
             toSearchInputRef={toSearchInputRef}
-            setFromPlaces={setFromPlaces}
-            setPlaces={setPlaces}
             fromPlaces={fromPlaces}
             places={places}
             handleFromPlaceSelect={handleFromPlaceSelect}
             handlePlaceSelect={handlePlaceSelect}
-            setkeyboardAvoidingHeight={setkeyboardAvoidingHeight}
             setQuery={setQuery}
             setFromQuery={setFromQuery}
             fromQuery={fromQuery}

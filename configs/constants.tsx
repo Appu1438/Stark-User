@@ -22,6 +22,21 @@ export const slides = [
   },
 ];
 
+ export const vehicleImages = {
+    Auto: require("@/assets/images/vehicles/auto.png"),
+    Sedan: require("@/assets/images/vehicles/sedan.png"),
+    Suv: require("@/assets/images/vehicles/suv.png"),
+    Hatchback: require("@/assets/images/vehicles/hatchback.png"),
+  };
+
+ export  const vehicleNames = {
+    Auto: "Stark Mini",
+    Sedan: "Stark Prime",
+    Hatchback: "Stark Zip",
+    Suv: "Stark Max",
+  };
+
+
 export const CAB_FEATURES = {
   Hatchback: [
     "Budget friendly",

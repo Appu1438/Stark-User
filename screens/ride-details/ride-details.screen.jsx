@@ -77,7 +77,7 @@ export default function RideDetailScreen() {
       } finally {
         setTimeout(() => {
           setLoading(false);
-        }, 2000);
+        }, 0);
       }
     };
 

@@ -34,11 +34,23 @@ import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import RideCard from "@/components/ride/ride.card";
 import { CAB_TYPES, DAILY_DESTINATIONS, EXPLORE_MORE, FEATURES, NEARBY_PLACES } from "@/configs/constants";
 import AppAlert from "@/components/modal/alert-modal/alert.modal";
+import { useUserLocationStore } from "@/store/userLocationStore";
+import { getDistrict } from "@/utils/ride/getDistrict";
 
 
 export default function Home() {
   const { recentRides, loading, refetchRides } = useGetUserRideHistories();
   const [refreshing, setRefreshing] = useState(false);
+
+
+  const {
+    fetchLocation,
+  } = useUserLocationStore();
+
+
+  useEffect(() => {
+    fetchLocation(null, getDistrict);
+  }, []);
 
   const [pendingExit, setPendingExit] = useState(false);
 

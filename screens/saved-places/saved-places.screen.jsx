@@ -14,6 +14,7 @@ import {
   FlatList,
   Keyboard,
   ScrollView,
+  Pressable,
 } from "react-native";
 
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -29,6 +30,8 @@ import { useGetUserSavedPlaces } from "@/hooks/useGetUserData";
 import { customMapStyle } from "@/utils/map/mapStyle";
 import Images from "@/utils/images";
 import AppAlert from "@/components/modal/alert-modal/alert.modal";
+import { useUserLocationStore } from "@/store/userLocationStore";
+import { Location } from "@/utils/icons";
 
 /* Icon selector */
 const getPlaceIcon = (label = "") => {
@@ -43,6 +46,14 @@ const getPlaceIcon = (label = "") => {
 export default function SavedPlaces() {
   const { loading, savedPlaces, refetchSavedPlaces } =
     useGetUserSavedPlaces();
+
+  const {
+    userLocation,
+    userLocationName,
+    findingLocation,
+    userPlaceId
+  } = useUserLocationStore();
+
 
   const [label, setLabel] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -180,7 +191,7 @@ export default function SavedPlaces() {
 
       triggerAlert({
         title: "Success",
-        message: "Your place has been saved successfully.",
+        message: "Your place has been saved successfully.Please Refresh",
       });
     } catch (err) {
       triggerAlert({
@@ -405,6 +416,42 @@ export default function SavedPlaces() {
               style={styles.input}
             />
 
+            {!findingLocation && userLocation && (
+              <Pressable
+                style={{
+                  padding: 5,
+                  borderRadius: 10,
+                  // backgroundColor: color.primaryGray,
+                  marginBottom: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+                onPress={() => {
+                  if (!userLocation) return;
+
+                  setSearchQuery(userLocationName);
+                  setSelectedLocation(userLocationName);
+                  setLocation(userLocation);
+                  setPlaceId(userPlaceId);
+
+                  mapRef.current?.animateToRegion(
+                    {
+                      ...userLocation,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    },
+                    400
+                  );
+                }}
+              >
+                <Location colors={color.primaryText} />
+                <Text style={{ marginLeft: 10, color: color.primaryText, fontSize: fontSizes.FONT15, fontFamily: "TT-Octosquares-Medium" }}>
+                  Save Current Location
+                </Text>
+              </Pressable>
+
+            )}
+
             {autocompleteResults.length > 0 && (
               <Animated.View
                 style={{
@@ -441,6 +488,9 @@ export default function SavedPlaces() {
           </View>
         </LinearGradient>
 
+
+
+
         {/* ---------- MAP ---------- */}
         {location && (
           <View style={styles.mapWrap}>
@@ -476,7 +526,7 @@ export default function SavedPlaces() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
-            <Text style={{ color: "#aaa", textAlign: "center", marginTop: 20 }}>
+            <Text style={{ color: "#aaa", textAlign: "center", marginTop: 20, fontFamily: "TT-Octosquares-Medium" }}>
               No saved places yet.
             </Text>
           }
@@ -535,7 +585,7 @@ const styles = StyleSheet.create({
     fontFamily: "TT-Octosquares-Medium",
   },
   mapWrap: {
-    height: 120,
+    height: 200,
     marginTop: 10,
     borderRadius: 12,
     overflow: "hidden",

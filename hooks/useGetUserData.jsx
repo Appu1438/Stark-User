@@ -14,12 +14,12 @@ export const useGetUserData = () => {
       setTimeout(() => {
         setUser(res.data.user);
         setLoading(false);
-      }, 3000);
+      }, 0);
     } catch (error) {
       console.log("Failed to fetch user data:", error);
 
       // still delay a bit before hiding skeleton, to look smoother
-      setTimeout(() => setLoading(false), 3000);
+      setTimeout(() => setLoading(false), 0);
     }
   };
   useEffect(() => {
@@ -41,9 +41,9 @@ export const useGetUserSavedPlaces = () => {
       console.log(res.data.data)
       setSavedPlaces(res.data.data || []);
     } catch (err) {
-      Alert.alert("Error", "Unable to load saved places.");
+      console.log("Failed to fetch savedPlaces:", err);
     } finally {
-      setTimeout(() => setLoading(false), 3000);
+      setTimeout(() => setLoading(false), 0);
     }
   };
 
@@ -64,11 +64,11 @@ export const useGetUserRideHistories = () => {
       setTimeout(() => {
         setRecentRides(res.data.rides || []);
         setLoading(false);
-      }, 3000);
+      }, 0);
     } catch (error) {
       console.log("Failed to fetch rides:", error);
     } finally {
-      setTimeout(() => setLoading(false), 3000);
+      setTimeout(() => setLoading(false), 0);
     }
   };
 

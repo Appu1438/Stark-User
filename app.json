@@ -37,7 +37,6 @@
       "expo-router"
     ],
     "android": {
-      "googleServicesFile": "./google-services.json",
       "package": "com.adithyanskumar.stark",
       "versionCode": 1,
       "permissions": [

@@ -11,7 +11,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/logo/IconOnly.png",
-          "color": "#ffffff"
+          "color": "#00000"
         }
       ],
       [
@@ -37,6 +37,7 @@
       "expo-router"
     ],
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.adithyanskumar.stark",
       "versionCode": 1,
       "permissions": [

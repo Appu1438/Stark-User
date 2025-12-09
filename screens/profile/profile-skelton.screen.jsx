@@ -5,13 +5,14 @@ import {
   Dimensions,
   StyleSheet,
   ScrollView,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import color from "@/themes/app.colors";
-import { windowHeight, windowWidth } from "@/themes/app.constant";
 
 export default function ProfileSkeleton() {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const screenWidth = Dimensions.get("window").width;
 
   useEffect(() => {
     Animated.loop(
@@ -25,7 +26,7 @@ export default function ProfileSkeleton() {
 
   const translateX = shimmerAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [-200, Dimensions.get("window").width + 200],
+    outputRange: [-screenWidth, screenWidth * 2],
   });
 
   const ShimmerOverlay = () => (
@@ -36,7 +37,7 @@ export default function ProfileSkeleton() {
       }}
     >
       <LinearGradient
-        colors={["transparent", "rgba(255,255,255,0.25)", "transparent"]}
+        colors={["transparent", "rgba(255,255,255,0.08)", "transparent"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={{ flex: 1 }}
@@ -48,98 +49,89 @@ export default function ProfileSkeleton() {
     width,
     height,
     radius = 10,
-    marginBottom = 10,
-    marginTop = 0,
+    marginBottom = 15,
+    style,
   }) => (
     <View
-      style={{
-        width,
-        height,
-        borderRadius: radius,
-        backgroundColor: "rgba(255,255,255,0.08)",
-        overflow: "hidden",
-        marginBottom,
-        marginTop,
-      }}
+      style={[
+        {
+          width,
+          height,
+          borderRadius: radius,
+          backgroundColor: "rgba(255,255,255,0.05)", // Premium dark skeleton color
+          overflow: "hidden",
+          marginBottom,
+        },
+        style,
+      ]}
     >
       <ShimmerOverlay />
     </View>
   );
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        alignItems: "center",
-        paddingBottom: 50,
-        backgroundColor: color.background,
-      }}
-    >
-      {/* ---------- HEADER ---------- */}
-      <View
-        style={{
-          width: "100%",
-          height: windowHeight(270),
-          justifyContent: "center",
-          alignItems: "center",
-          borderBottomLeftRadius: 20,
-          borderBottomRightRadius: 20,
-          backgroundColor: color.subPrimary,
-        }}
-      >
-        <SkeletonBox width={115} height={115} radius={60} marginBottom={12} />
-        <SkeletonBox width={120} height={18} />
-        <SkeletonBox width={90} height={14} marginTop={6} />
-      </View>
-
-      {/* ---------- STATS CARD ---------- */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-          alignItems: "center",
-          width: windowWidth(320),
-          height: windowHeight(70),
-          borderRadius: 20,
-          backgroundColor: color.subPrimary,
-          marginTop: windowHeight(-40),
-          overflow: "hidden",
-        }}
-      >
-        <SkeletonBox width={60} height={40} />
-        <SkeletonBox width={60} height={40} />
-      </View>
-
-      {/* ---------- ACCOUNT DETAILS ---------- */}
-      <View style={{ marginTop: 50, width: "85%" }}>
-        <SkeletonBox width={150} height={18} marginBottom={16} />
-        {[1, 2, 3].map((i) => (
-          <SkeletonBox key={i} width="100%" height={40} marginBottom={10} />
-        ))}
-      </View>
-
-      {/* ---------- SUPPORT & HELP ---------- */}
-      <View style={{ marginTop: 45, width: "85%" }}>
-        <SkeletonBox width={140} height={18} marginBottom={16} />
-        {[1, 2].map((i) => (
-          <SkeletonBox key={i} width="100%" height={40} marginBottom={10} />
-        ))}
-      </View>
-
-      {/* ---------- LEGAL SECTION ---------- */}
-      <View style={{ marginTop: 45, width: "85%" }}>
-        <SkeletonBox width={160} height={18} marginBottom={16} />
-        <SkeletonBox width="100%" height={40} />
-      </View>
-
-      {/* ---------- LOGOUT BUTTON ---------- */}
-      <SkeletonBox
-        width="85%"
-        height={50}
-        radius={14}
-        marginBottom={50}
-        marginTop={60}
+    <View style={styles.container}>
+      {/* Background to match main screen */}
+      <LinearGradient
+        colors={[color.bgDark || "#000", "#111"]}
+        style={StyleSheet.absoluteFill}
       />
-    </ScrollView>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* ---------- 1. HEADER ROW (Avatar + Info) ---------- */}
+        <View style={styles.headerRow}>
+          {/* Avatar */}
+          <SkeletonBox width={75} height={75} radius={25} marginBottom={0} />
+
+          {/* Info Column */}
+          <View style={{ marginLeft: 20, justifyContent: 'center' }}>
+            <SkeletonBox width={150} height={24} radius={6} marginBottom={8} />
+            <SkeletonBox width={180} height={14} radius={6} marginBottom={10} />
+            <SkeletonBox width={100} height={22} radius={6} marginBottom={0} />
+          </View>
+        </View>
+
+        {/* ---------- 2. STATS STRIP ---------- */}
+        <SkeletonBox width="100%" height={70} radius={16} marginBottom={30} />
+
+        {/* ---------- 3. MENU GROUPS (Islands) ---------- */}
+
+        {/* Group 1: Account */}
+        <SkeletonBox width={80} height={12} radius={4} marginBottom={10} />
+        <SkeletonBox width="100%" height={60} radius={16} marginBottom={25} />
+
+        {/* Group 2: Support */}
+        <SkeletonBox width={80} height={12} radius={4} marginBottom={10} />
+        <SkeletonBox width="100%" height={120} radius={16} marginBottom={25} />
+
+        {/* Group 3: Legal */}
+        <SkeletonBox width={60} height={12} radius={4} marginBottom={10} />
+        <SkeletonBox width="100%" height={60} radius={16} marginBottom={30} />
+
+        {/* ---------- 4. LOGOUT BUTTON ---------- */}
+        <SkeletonBox width="100%" height={55} radius={16} marginBottom={50} />
+
+      </ScrollView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#050505",
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 80,
+    paddingBottom: 50,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+});

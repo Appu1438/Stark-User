@@ -18,7 +18,8 @@ export default function RideRoute({
   locationSelected,
   driverLists,
   mapRef,
-  expanded
+  expanded,
+  distance
 }) {
   const strokeColor = Platform.select({
     ios: color.strokeColor,
@@ -144,7 +145,14 @@ export default function RideRoute({
         {/* 🚗 Nearby Drivers */}
         {locationSelected &&
           driverLists
-            ?.filter(d => d.latitude != null && d.longitude != null)
+            ?.filter(d => {
+              if (d.latitude == null || d.longitude == null) return false;
+
+              // ❌ Hide Auto drivers beyond 25 km
+              if (distance > 25 && d.vehicle_type === "Auto") return false;
+
+              return true;
+            })
             .map(driver => (
               <Marker.Animated
                 key={driver.id}
@@ -154,8 +162,8 @@ export default function RideRoute({
                 <Image
                   source={getVehicleIcon(driver.vehicle_type)}
                   style={{
-                    width: 35,
-                    height: 35,
+                    width: windowWidth(30),
+                    height: windowHeight(30),
                     resizeMode: "contain",
                     transform: [
                       {

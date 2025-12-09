@@ -142,6 +142,17 @@ export default function RidePlanScreen() {
       }
     }, [watingForBookingResponse])
   );
+  
+  useEffect(() => {
+    const activeDrivers = driverLists.filter(
+      d => d.latitude !== null && d.longitude !== null
+    );
+
+    if (activeDrivers.length === 0) {
+      setWaitingForBookingResponse(false);
+    }
+  }, [driverLists]);
+
 
   //Location Setups
   const {
@@ -542,6 +553,9 @@ export default function RidePlanScreen() {
             setModalVisible(true);
             // Toast.show("Ride Accepted . Enjoy Your Ride", { type: "success" });
 
+            setWaitingForBookingResponse(false);
+
+
             // Delay navigation so modal is visible
             setTimeout(() => {
               router.replace({
@@ -599,6 +613,7 @@ export default function RidePlanScreen() {
             driverLists={driverLists}
             mapRef={mapRef}
             expanded={expanded}
+            distance={distance}
           />
         </View>
 

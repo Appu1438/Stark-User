@@ -5,334 +5,493 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  Alert,
   RefreshControl,
   ActivityIndicator,
+  StyleSheet,
+  StatusBar,
+  Platform,
 } from "react-native";
-import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
-import Button from "@/components/common/button";
 import { useGetUserData } from "@/hooks/useGetUserData";
 import { logout } from "@/api/apis";
 import color from "@/themes/app.colors";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import ProfileSkeleton from "./profile-skelton.screen";
 import AppAlert from "@/components/modal/alert-modal/alert.modal";
-
+import FooterNote from "@/components/common/footer-note";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Constants from "expo-constants";
 
 export default function Profile() {
   const { user, loading, refetchData } = useGetUserData();
-
   const [refreshing, setRefreshing] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
-
 
   const onRefresh = async () => {
     setRefreshing(true);
     await refetchData();
     setRefreshing(false);
   };
+
   if (loading || !user) {
     return <ProfileSkeleton />;
   }
-  const mockRating = user.ratings || 0;
-  const membership = user.totalRides > 50 ? "Gold Member" : "Basic Member";
 
-  // const handleLogout = async () => {
-  //   Alert.alert(
-  //     "Confirm Logout",
-  //     "Are you sure you want to log out?",
-  //     [
-  //       { text: "Cancel", style: "cancel" },
-  //       {
-  //         text: "Log Out",
-  //         style: "destructive",
-  //         onPress: async () => await logout(setIsLoggingOut),
-  //       },
-  //     ],
-  //     { cancelable: true }
-  //   );
-  // };
+  const mockRating = user.ratings || 0;
+  const totalRides = user.totalRides || 0;
+  const pendingRides = user.pendingRides || 0;
+  const cancelRides = user.cancelRides || 0;
+  const membership = user.totalRides > 50 ? "Gold Member" : "Basic Member";
 
   const handleLogout = () => {
     setShowAlert(true);
   };
 
-  return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      style={{
-        flex: 1,
-      }}
-
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={color.primary} />
-      }
+  // --- REUSABLE MENU ITEM ---
+  const SectionLink = ({ title, path, icon, isLast }) => (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => router.push(path)}
+      style={[styles.menuItem, isLast && styles.menuItemLast]}
     >
-      {/* ---------- HEADER ---------- */}
+      <View style={styles.menuItemLeft}>
+        <View style={styles.iconContainer}>{icon}</View>
+        <Text style={styles.menuText}>{title}</Text>
+      </View>
+      <View style={styles.menuItemRight}>
+        <Ionicons name="chevron-forward" size={16} color="#666" />
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* BACKGROUND GRADIENT */}
       <LinearGradient
-        colors={[color.subPrimary, color.darkHeader]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          height: windowHeight(270),
-          justifyContent: "center",
-          alignItems: "center",
-          borderBottomLeftRadius: 20,
-          borderBottomRightRadius: 20,
-          paddingBottom: 20,
-          elevation: 6,
-          shadowColor: "#000",
-          shadowOpacity: 0.25,
-          shadowRadius: 8,
-        }}
+        colors={[color.bgDark, color.subPrimary]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 10 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={color.primary}
+            progressViewOffset={40}
+          />
+        }
       >
-        <View
-          style={{
-            width: 115,
-            height: 115,
-            borderRadius: 60,
-            backgroundColor: "#fff",
-            overflow: "hidden",
-            borderWidth: 3,
-            borderColor: "#fff",
-            marginBottom: 12,
-          }}
-        >
-          <Image
-            source={{
-              uri:
-                user.profilePic ||
-                "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-            }}
-            style={{ width: "100%", height: "100%" }}
+        {/* ---------- HEADER PROFILE ---------- */}
+        <View style={styles.headerContainer}>
+          <View style={styles.profileRow}>
+            <View style={styles.avatarContainer}>
+              <Image
+                source={{
+                  uri: user.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                }}
+                style={styles.avatarImage}
+              />
+              <View style={styles.activeBadge} />
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{user.name}</Text>
+              <Text style={styles.profileEmail}>{user.email}</Text>
+              <View style={styles.tagRow}>
+                <View style={styles.proTag}>
+                  <Text style={styles.proTagText}>{membership.toUpperCase()}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* QUICK STATS ROW */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <View style={styles.statIconBox}>
+                <Ionicons name="star" size={14} color="#FFD700" />
+              </View>
+              <Text style={styles.statValue}>{mockRating.toFixed(1)}</Text>
+              <Text style={styles.statLabel}>Rating</Text>
+            </View>
+            <View style={styles.verticalDivider} />
+            <View style={styles.statItem}>
+              <View style={[styles.statIconBox, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+                <Ionicons name="calendar" size={14} color="#fff" />
+              </View>
+              <Text style={styles.statValue}>{new Date(user.createdAt).getFullYear()}</Text>
+              <Text style={styles.statLabel}>Joined</Text>
+            </View>
+          </View>
+          <View style={styles.activityContainer}>
+
+            {/* 1. Total / Completed */}
+            <View style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: 'rgba(0, 230, 118, 0.1)' }]}>
+                <Ionicons name="checkmark-circle" size={16} color="#00E676" />
+              </View>
+              <Text style={styles.activityValue}>{totalRides}</Text>
+              <Text style={styles.activityLabel}>Completed</Text>
+            </View>
+
+            {/* Vertical Divider */}
+            <View style={styles.activityDivider} />
+
+            {/* 2. Pending */}
+            <View style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: 'rgba(255, 171, 0, 0.1)' }]}>
+                <Ionicons name="time" size={16} color="#FFAB00" />
+              </View>
+              <Text style={styles.activityValue}>{pendingRides}</Text>
+              <Text style={styles.activityLabel}>Pending</Text>
+            </View>
+
+            {/* Vertical Divider */}
+            <View style={styles.activityDivider} />
+
+            {/* 3. Cancelled */}
+            <View style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: 'rgba(255, 82, 82, 0.1)' }]}>
+                <Ionicons name="close-circle" size={16} color="#FF5252" />
+              </View>
+              <Text style={styles.activityValue}>{cancelRides}</Text>
+              <Text style={styles.activityLabel}>Cancelled</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ---------- MENU SECTIONS ---------- */}
+
+        {/* GROUP 1: ACCOUNT */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Account</Text>
+        </View>
+        <View style={styles.menuContainer}>
+          <SectionLink
+            title="Saved Places"
+            path="/(routes)/profile/saved-places"
+            icon={<Ionicons name="heart" size={18} color="#FF5252" />}
+            isLast
           />
         </View>
-        <Text
-          style={{
-            fontSize: fontSizes.FONT26,
-            fontFamily: "TT-Octosquares-Medium",
-            color: "white",
-          }}
-        >
-          {user.name}
-        </Text>
-        <Text
-          style={{
-            fontSize: fontSizes.FONT16,
-            fontFamily: "TT-Octosquares-Medium",
-            color: "#dcdcdc",
-            marginTop: 4,
-          }}
-        >
-          {membership}
-        </Text>
-      </LinearGradient>
 
-      {/* ---------- QUICK STATS ---------- */}
-      <LinearGradient
-        colors={[color.bgDark, color.bgDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-          alignItems: "center",
-          marginHorizontal: windowWidth(20),
-          paddingVertical: windowHeight(18),
-          borderRadius: 20,
-          marginTop: windowHeight(-50),
-        }}
-      >
-        <StatCard icon="star-outline" label="Rating" value={mockRating.toFixed(1)} />
-        <View style={{ width: 1, height: 40, backgroundColor: color.border }} />
-        <StatCard
-          icon="calendar-outline"
-          label="Joined"
-          value={new Date(user.createdAt).getFullYear()}
-        />
-      </LinearGradient>
+        {/* GROUP 2: SUPPORT & HELP */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Support</Text>
+        </View>
+        <View style={styles.menuContainer}>
+          <SectionLink
+            title="Help & Support"
+            path="/(routes)/profile/help-support"
+            icon={<Feather name="headphones" size={18} color="#00B0FF" />}
+          />
+          <SectionLink
+            title="Report an Issue"
+            path="/(routes)/profile/complaints"
+            icon={<MaterialIcons name="report-problem" size={18} color="#FFAB00" />}
+            isLast
+          />
+        </View>
 
-      {/* ---------- ACCOUNT INFO ---------- */}
-      <ProfileSection title="Account Details">
-        <InfoRow icon="person-outline" label="Full Name" value={user.name || "-"} />
-        <InfoRow icon="mail-outline" label="Email" value={user.email || "-"} />
-        <InfoRow icon="call-outline" label="Phone" value={user.phone_number || "-"} showDivider={false} />
-      </ProfileSection>
+        {/* GROUP 3: LEGAL */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Legal</Text>
+        </View>
+        <View style={styles.menuContainer}>
+          <SectionLink
+            title="Terms & Policies"
+            path="/(routes)/legal"
+            icon={<Ionicons name="document-text" size={18} color="#9E9E9E" />}
+            isLast
+          />
+        </View>
 
-      {/* ---------- SHORTCUTS ---------- */}
-      <ProfileSection title="Your Shortcuts">
-        <MenuItem
-          icon="heart-outline"
-          label="Saved Places"
-          onPress={() => router.push("/(routes)/profile/saved-places")}
-        />
-      </ProfileSection>
-
-      {/* ---------- SUPPORT SECTION ---------- */}
-      <ProfileSection title="Support & Help">
-        <MenuItem
-          icon="help-circle-outline"
-          label="Help & Support"
-          onPress={() => router.push("/(routes)/profile/help-support")}
-        />
-        <MenuItem
-          icon="alert-circle-outline"
-          label="Register Complaint"
-          onPress={() => router.push("/(routes)/profile/complaints")}
-        />
-      </ProfileSection>
-
-      {/* ---------- LEGAL SECTION ---------- */}
-      <ProfileSection title="App Information">
-        <MenuItem
-          icon="document-text-outline"
-          label="Legal & Policies"
-          onPress={() => router.push("/(routes)/legal")}
-        />
-      </ProfileSection>
-
-      {/* ---------- LOGOUT ---------- */}
-      <ProfileSection title="">
-        <Button
-          title={isLoggingOut ? <ActivityIndicator color={color.primary} /> : "Log Out"}
+        {/* ---------- LOGOUT ---------- */}
+        <TouchableOpacity
+          disabled={isLoggingOut}
           onPress={handleLogout}
-          disabled={isLoggingOut} />
-      </ProfileSection>
+          style={styles.logoutButton}
+        >
+          {isLoggingOut ? (
+            <ActivityIndicator color="#FF3B30" />
+          ) : (
+            <>
+              <Ionicons name="log-out-outline" size={20} color="#FF3B30" style={{ marginRight: 8 }} />
+              <Text style={styles.logoutText}>Log Out</Text>
+            </>
+          )}
+        </TouchableOpacity>
 
-      <View style={{ height: 60 }} />
+        <FooterNote />
+
+        <Text style={styles.versionText}>
+          v{Constants.expoConfig?.version} • {Constants.expoConfig?.name || "Stark Driver App"}
+        </Text>
+
+      </ScrollView>
 
       <AppAlert
         visible={showAlert}
         title="Confirm Logout"
         message="Are you sure you want to log out?"
-        cancelText="Cancel"
         confirmText="Log Out"
+        cancelText="Cancel"
+        showCancel={true}
         onCancel={() => setShowAlert(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           setShowAlert(false);
-          logout(setIsLoggingOut);
+          await logout(setIsLoggingOut);
         }}
       />
-
-    </ScrollView>
+    </View>
   );
 }
 
-/* ---------- SUB COMPONENTS ---------- */
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#050505",
+  },
 
-const StatCard = ({ icon, label, value }) => (
-  <View style={{ alignItems: "center" }}>
-    <Ionicons name={icon} size={24} color={color.primaryText} />
-    <Text
-      style={{
-        fontSize: fontSizes.FONT18,
-        color: color.primaryText,
-        fontFamily: "TT-Octosquares-Medium",
-        marginTop: 4,
-      }}
-    >
-      {value}
-    </Text>
-    <Text
-      style={{
-        fontSize: fontSizes.FONT14,
-        color: "#aaa",
-        fontFamily: "TT-Octosquares-Medium",
-      }}
-    >
-      {label}
-    </Text>
-  </View>
-);
+  versionText: {
+    textAlign: 'center',
+    color: '#444',
+    fontSize: 11,
+    marginTop: 20,
+    fontFamily: 'TT-Octosquares-Medium',
+  },
 
-const InfoRow = ({ icon, label, value, showDivider = true }) => (
-  <View style={{ marginBottom: showDivider ? 12 : 0 }}>
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingVertical: 10,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Ionicons name={icon} size={20} color={color.primaryText} style={{ marginRight: 10 }} />
-        <Text
-          style={{
-            fontSize: fontSizes.FONT16,
-            color: color.primaryText,
-            fontFamily: "TT-Octosquares-Medium",
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-      <Text
-        style={{
-          fontSize: fontSizes.FONT16,
-          color: "#888",
-          fontFamily: "TT-Octosquares-Medium",
-          maxWidth: "60%",
-          textAlign: "right",
-        }}
-      >
-        {value}
-      </Text>
-    </View>
-    {showDivider && (
-      <View
-        style={{
-          height: 1,
-          backgroundColor: color.border,
-          opacity: 0.4,
-        }}
-      />
-    )}
-  </View>
-);
+  // Header
+  headerContainer: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 80,
+    paddingBottom: 25,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 20,
+  },
+  avatarImage: {
+    width: 75,
+    height: 75,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  activeBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    backgroundColor: '#00E676',
+    borderRadius: 10,
+    borderWidth: 3,
+    borderColor: '#121212',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 22,
+    color: '#fff',
+    fontFamily: 'TT-Octosquares-Medium',
+    letterSpacing: 0.5,
+  },
+  profileEmail: {
+    fontSize: 12,
+    color: '#888',
+    fontFamily: 'TT-Octosquares-Medium',
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  tagRow: {
+    flexDirection: 'row',
+  },
+  proTag: {
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  proTagText: {
+    fontSize: 10,
+    color: '#FFD700',
+    fontFamily: 'TT-Octosquares-Medium',
+  },
 
-const MenuItem = ({ icon, label, onPress }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={{
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: 14,
-    }}
-    activeOpacity={0.7}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <Ionicons name={icon} size={22} color={color.primaryText} style={{ marginRight: 12 }} />
-      <Text
-        style={{
-          fontSize: fontSizes.FONT16,
-          color: color.primaryText,
-          fontFamily: "TT-Octosquares-Medium",
-        }}
-      >
-        {label}
-      </Text>
-    </View>
-    <Ionicons name="chevron-forward-outline" size={20} color="#999" />
-  </TouchableOpacity>
-);
+  // Stats
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 16,
+    padding: 15,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 5,
+  },
+  statValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'TT-Octosquares-Medium',
+  },
+  statLabel: {
+    color: '#666',
+    fontSize: 11,
+    marginTop: 2,
+    fontFamily: 'TT-Octosquares-Medium',
 
-const ProfileSection = ({ title, children }) => (
-  <View style={{ marginTop: 40, paddingHorizontal: windowWidth(25) }}>
-    <Text
-      style={{
-        fontSize: fontSizes.FONT20,
-        color: color.primaryText,
-        fontFamily: "TT-Octosquares-Medium",
-        marginBottom: 12,
-      }}
-    >
-      {title}
-    </Text>
-    {children}
-  </View>
-);
+  },
+  verticalDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    height: '80%',
+    alignSelf: 'center',
+  },
+
+  // ... existing styles
+
+  // --- New Activity Dashboard Styles ---
+  activityContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)', // Slightly lighter than background
+    borderRadius: 16,
+    paddingVertical: 15,
+    marginTop: 15, // Space between Rating row and this row
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  activityItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12, // Squircle shape
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  activityValue: {
+    fontSize: 18,
+    color: '#fff',
+    fontFamily: 'TT-Octosquares-Medium',
+    lineHeight: 22,
+  },
+  activityLabel: {
+    fontSize: 11,
+    color: '#888', // Muted text for labels
+    fontFamily: 'TT-Octosquares-Medium',
+  },
+  activityDivider: {
+    width: 1,
+    height: '60%', // Don't touch top/bottom edges
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignSelf: 'center',
+  },
+
+  // Sections
+  sectionHeader: {
+    marginTop: 25,
+    marginBottom: 10,
+    paddingHorizontal: 25,
+  },
+  sectionTitle: {
+    color: '#666',
+    fontSize: 13,
+    fontFamily: 'TT-Octosquares-Medium',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  menuContainer: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuText: {
+    color: '#eee',
+    fontSize: 15,
+    fontFamily: 'TT-Octosquares-Medium',
+  },
+  menuItemRight: {
+    marginLeft: 10,
+  },
+
+  // Logout
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginTop: 30,
+    marginBottom: 20,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.3)',
+  },
+  logoutText: {
+    color: '#FF3B30',
+    fontSize: 16,
+    fontFamily: 'TT-Octosquares-Medium',
+  },
+});

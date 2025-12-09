@@ -11,20 +11,22 @@ import {
   StyleSheet,
   Keyboard,
   TextInput,
+  StatusBar,
 } from "react-native";
-import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
-import { Clock, Gps, LeftArrow, RightArrow, Location } from "@/utils/icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import color from "@/themes/app.colors";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import { useGetUserSavedPlaces } from "@/hooks/useGetUserData";
+import { Location, Gps } from "@/utils/icons"; // Assuming these are SVG components
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// SNAP points per your request
+// Adjust snap points for premium feel
 const SNAP = {
-  COLLAPSED: windowHeight(220), // Q1 value
+  COLLAPSED: windowHeight(290), // Slightly taller for better breathing room
   HALF: Math.round(SCREEN_HEIGHT * 0.65),
-  FULL: SCREEN_HEIGHT - (Platform.OS === "ios" ? 40 : 40),
+  FULL: SCREEN_HEIGHT - (Platform.OS === "ios" ? 50 : 30),
 };
 
 export default function RideLocationSelector({
@@ -53,45 +55,36 @@ export default function RideLocationSelector({
   setShowAlert
 }) {
 
-  // saved places
   const { loading: savedLoading, savedPlaces = [] } = useGetUserSavedPlaces();
-
-  // state: sheetAnim (0..1) controls height between COLLAPSED and FULL
-  const sheetAnim = useRef(new Animated.Value(0)).current; // 0 collapsed, 1 full
-  const [expanded, setExpanded] = useState(false); // full-screen?
-  const [isPanning, setIsPanning] = useState(false); // block inner scroll while pan
-
-  const [pickupPlaceholder, setPickupPlaceholder] = useState(currentLocationName); // block inner scroll while pan
+  const sheetAnim = useRef(new Animated.Value(0)).current;
+  const [expanded, setExpanded] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const [pickupPlaceholder, setPickupPlaceholder] = useState(currentLocationName);
 
   useEffect(() => {
-    let pickupPlaceholder = isFindingLocation
+    let placeholder = isFindingLocation
       ? "Fetching location..."
       : currentLocationName === userLocationName
-        ? `${currentLocationName} (Current Location)`
+        ? `${currentLocationName}`
         : currentLocationName;
+    setPickupPlaceholder(placeholder);
+  }, [toggleUserLocation, currentLocationName, isFindingLocation]);
 
-    setPickupPlaceholder(pickupPlaceholder)
-  }, [toggleUserLocation, currentLocationName, isFindingLocation])
-
-  // map sheetAnim to height and border radius (no translateY)
   const sheetHeight = sheetAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [SNAP.COLLAPSED, SNAP.FULL],
     extrapolate: "clamp",
   });
+
   const sheetBorderRadius = sheetAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [18, 0],
+    outputRange: [24, 0], // Smoother radius transition
     extrapolate: "clamp",
   });
 
-  // snap function same logic as RideOptions
   const snapTo = (pointKey) => {
     let toVal = 0;
-    if (pointKey === "COLLAPSED") {
-      toVal = 0;
-      Keyboard.dismiss()
-    }
+    if (pointKey === "COLLAPSED") { toVal = 0; Keyboard.dismiss(); }
     else if (pointKey === "HALF") {
       const frac = (SNAP.HALF - SNAP.COLLAPSED) / (SNAP.FULL - SNAP.COLLAPSED);
       toVal = frac;
@@ -100,122 +93,87 @@ export default function RideLocationSelector({
     Animated.spring(sheetAnim, {
       toValue: toVal,
       useNativeDriver: false,
-      stiffness: 160,
-      damping: 18,
+      stiffness: 140,
+      damping: 16,
       mass: 1,
-      overshootClamping: true,
-    }).start(() => {
-      setExpanded(toVal >= 0.95);
-    });
+    }).start(() => setExpanded(toVal >= 0.95));
   };
 
-  // initialize collapsed
-  useEffect(() => {
-    sheetAnim.setValue(0);
-    setExpanded(false);
-  }, []);
+  useEffect(() => { sheetAnim.setValue(0); setExpanded(false); }, []);
 
-  // PanResponder: we DO NOT move sheet while dragging; only compute on release and snap
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6,
-      onPanResponderGrant: () => {
-        setIsPanning(true);
-      },
-      onPanResponderMove: () => {
-        // purposely do nothing so sheet doesn't follow finger
-      },
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 10,
+      onPanResponderGrant: () => setIsPanning(true),
+      onPanResponderMove: () => { },
       onPanResponderRelease: (_, gesture) => {
         const { dy, vy } = gesture;
-
-        // determine projected height based on current sheetAnim value
         sheetAnim.stopAnimation((val) => {
-          const currHeight =
-            SNAP.COLLAPSED + (SNAP.FULL - SNAP.COLLAPSED) * val;
-          // project: note dy > 0 means drag down, so subtract dy to go up
-          const projected = currHeight - dy - vy * 200;
-
-          // choose nearest snap
+          const currHeight = SNAP.COLLAPSED + (SNAP.FULL - SNAP.COLLAPSED) * val;
+          const projected = currHeight - dy - vy * 150;
           const candidates = [
             { key: "COLLAPSED", diff: Math.abs(projected - SNAP.COLLAPSED) },
             { key: "HALF", diff: Math.abs(projected - SNAP.HALF) },
             { key: "FULL", diff: Math.abs(projected - SNAP.FULL) },
           ].sort((a, b) => a.diff - b.diff);
-
           snapTo(candidates[0].key);
         });
-
-        // small delay to avoid immediate scroll toggling
         setTimeout(() => setIsPanning(false), 50);
       },
-      onPanResponderTerminate: () => {
-        // cancelled — ensure we stop panning
-        setIsPanning(false);
-      },
+      onPanResponderTerminate: () => setIsPanning(false),
     })
   ).current;
 
-  // toggle behavior for handle
-  const toggleHandle = () =>
-    sheetAnim.stopAnimation((val) => {
-      if (val < 0.5) snapTo("FULL");
-      else snapTo("COLLAPSED");
-    });
+  const toggleHandle = () => sheetAnim.stopAnimation((val) => {
+    if (val < 0.5) snapTo("FULL");
+    else snapTo("COLLAPSED");
+  });
 
-  // helper render saved place row
   const renderSavedPlace = (place, idx) => (
     <Pressable
       key={`saved-${idx}`}
       style={styles.resultRow}
       onPress={() => {
-        handlePlaceSelect(
-          place.placeId || place.place_id || place.id,
-          place.address || place.name
-        );
+        handlePlaceSelect(place.placeId || place.place_id || place.id, place.address || place.name);
         snapTo("COLLAPSED");
       }}
     >
-      <Location colors={color.primaryText} />
-      <View style={{ marginLeft: 12, flex: 1 }}>
-        <Text style={styles.resultMain}>{place.label || place.description}</Text>
-        <Text style={styles.resultSub}>{place.address || place.vicinity || ""}</Text>
+      <View style={styles.iconBox}>
+        <Ionicons name="location" size={20} color={color.primaryText} />
       </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.resultMain}>{place.label || place.description}</Text>
+        <Text style={styles.resultSub} numberOfLines={1}>{place.address || place.vicinity || ""}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color="#666" />
     </Pressable>
   );
 
   return (
     <Animated.View
-      style={[
-        {
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: sheetHeight,
-          borderTopLeftRadius: sheetBorderRadius,
-          borderTopRightRadius: sheetBorderRadius,
-          backgroundColor: color.subPrimary,
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: "#1d1d1d",
-        },
-      ]}
+      style={[styles.sheetContainer, { height: sheetHeight, borderTopLeftRadius: sheetBorderRadius, borderTopRightRadius: sheetBorderRadius }]}
       {...panResponder.panHandlers}
     >
-      {/* Header / handle */}
-      <View style={styles.handleWrap}>
-        <Pressable onPress={toggleHandle}>
-          <View style={styles.handle} />
+      {/* BACKGROUND GRADIENT */}
+      <LinearGradient
+        colors={[color.subPrimary,color.bgDark]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* HANDLE & HEADER */}
+      <View style={styles.headerWrapper}>
+        <Pressable onPress={toggleHandle} style={styles.handleContainer}>
+          <View style={styles.handleBar} />
         </Pressable>
 
-        <View style={styles.headerRow}>
+        <View style={styles.navRow}>
           <Pressable
             onPress={() => {
               if (isWaitingForResponse) {
                 setAlertConfig({
                   title: "Please Wait",
-                  message: "We are processing your booking request. You cannot go back right now.",
+                  message: "We are processing your booking request.",
                   confirmText: "OK",
                   showCancel: false,
                   onConfirm: () => setShowAlert(false),
@@ -223,384 +181,214 @@ export default function RideLocationSelector({
                 setShowAlert(true);
                 return;
               }
-
-              router.back(); // Normal behavior
+              router.back();
             }}
-            style={styles.headerLeft}
+            style={styles.iconButton}
           >
-            <LeftArrow />
+            <Ionicons name="arrow-back" size={22} color="#fff" />
           </Pressable>
 
           <Text style={styles.headerTitle}>Plan Your Ride</Text>
 
           <Pressable
             onPress={() => { if (currentLocation && marker) setlocationSelected(true); }}
-            style={styles.headerRight}
+            style={styles.iconButton}
           >
-            <RightArrow iconColor={color.primaryText} />
+            <Ionicons name="map-outline" size={22} color={color.primaryText} />
           </Pressable>
         </View>
       </View>
 
-      {/* body */}
-      <View style={styles.body}>
-        <View style={styles.pickupPill}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Clock />
-            <Text style={styles.pickupText}>Pick-up Now</Text>
-          </View>
-        </View>
-
-        {/* Search Inputs */}
-        <View
-          style={{
-            borderWidth: 2,
-            borderColor: color.border,
-            borderRadius: 15,
-            marginBottom: windowHeight(15),
-            paddingHorizontal: windowWidth(15),
-            paddingVertical: windowHeight(10),
-          }}
-        >
-          {/* FROM LOCATION */}
-          <View style={{ flexDirection: "row" }}>
-            <View style={{ marginTop: windowHeight(4.5) }}>
-              <Location colors={color.primaryGray} />
-            </View>
-
-            <View
-              style={{
-                borderBottomWidth: 1,
-                borderBottomColor: color.primaryGray,
-                width: Dimensions.get("window").width - 110,
-                marginLeft: windowWidth(15),
-                marginTop: windowHeight(-4),
-                height: windowHeight(35),
-              }}
-            >
-
+      {/* CONTENT BODY */}
+      <View style={styles.contentBody}>
+        
+        {/* INPUTS CARD */}
+        <View style={styles.inputCard}>
+          {/* Pickup Input */}
+          <View style={styles.inputRow}>
+            <View style={styles.dotIndicator} />
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>PICKUP</Text>
               <TextInput
                 ref={fromSearchInputRef}
-                style={{
-                  height: windowHeight(30),
-                  color: isFindingLocation ? "#777" : color.primaryText,
-                  fontSize: fontSizes.FONT15,
-                  fontFamily: "TT-Octosquares-Medium",
-                  backgroundColor: color.subPrimary,
-                }}
+                style={styles.textInput}
                 placeholder={pickupPlaceholder}
-                placeholderTextColor={color.primaryText}
+                placeholderTextColor="#666"
                 editable={!isFindingLocation}
                 value={fromQuery}
-                // autoCapitalize="true"
-                onFocus={() => {
-                  if (!isFindingLocation) snapTo("FULL");
-                }}
-                onChangeText={(text) => {
-                  setFromQuery(text);
-                }}
+                onFocus={() => !isFindingLocation && snapTo("FULL")}
+                onChangeText={setFromQuery}
               />
             </View>
           </View>
 
+          {/* Divider Line */}
+          <View style={styles.dividerContainer}>
+             <View style={styles.verticalLine} />
+          </View>
 
-          {/* TO LOCATION */}
-          <View style={{ flexDirection: "row", }}>
-            <View style={{ marginTop: windowHeight(12) }}>
-              <Gps colors={color.primaryGray} />
-            </View>
-
-            <View
-              style={{
-                width: Dimensions.get("window").width - 110,
-                marginLeft: windowWidth(15),
-                marginTop: windowHeight(5),
-                height: windowHeight(35),
-              }}
-            >
+          {/* Dropoff Input */}
+          <View style={styles.inputRow}>
+            <View style={[styles.dotIndicator, { backgroundColor: color.primaryText }]} />
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputLabel}>DROP-OFF</Text>
               <TextInput
                 ref={toSearchInputRef}
-                style={{
-                  height: windowHeight(30),
-                  color: isFindingLocation ? "#777" : color.primaryText,
-                  fontSize: fontSizes.FONT15,
-                  fontFamily: "TT-Octosquares-Medium",
-                  backgroundColor: color.subPrimary,
-                }}
+                style={styles.textInput}
                 placeholder={destLocationName}
-                placeholderTextColor={color.primaryText}
+                placeholderTextColor="#666"
                 editable={!isFindingLocation}
                 value={query}
-                // autoCapitalize="none"
-                onFocus={() => {
-                  if (!isFindingLocation) snapTo("FULL");
-                }}
-                onChangeText={(text) => {
-                  setQuery(text);
-                }}
+                onFocus={() => !isFindingLocation && snapTo("FULL")}
+                onChangeText={setQuery}
               />
             </View>
           </View>
-
         </View>
 
-        {/* Content: saved places & suggestions.
-            - inner ScrollView is enabled only when sheet is FULL (expanded)
-            - when user is typing, hide saved places (isTyping)
-        */}
+        {/* RESULTS LIST */}
         <Animated.ScrollView
-          style={styles.resultsContainer}
-          contentContainerStyle={{ paddingBottom: 120 }}
-          // scrollEnabled={expanded && !isPanning}
+          contentContainerStyle={styles.scrollList}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          onScrollBeginDrag={() => {
-            if (!expanded) snapTo("HALF");
-          }}
+          onScrollBeginDrag={() => { if (!expanded) snapTo("HALF"); }}
         >
+          
+          {/* Use Current Location Option */}
           {!isFindingLocation && userLocation && (
             <Pressable
-              style={{
-                padding: 5,
-                borderRadius: 10,
-                // backgroundColor: color.primaryGray,
-                marginBottom: 10,
-                flexDirection: "row",
-                alignItems: "center",
-              }}
+              style={styles.currentLocationRow}
               onPress={() => {
-                // Trigger reset
                 toggleUserLocation(prev => !prev);
-
-                // Clear user typed text
                 setFromQuery("");
-
-                // Collapse sheet if needed
                 snapTo("COLLAPSED");
               }}
             >
-              <Location colors={color.primaryText} />
-              <Text style={{ marginLeft: 10, color: color.primaryText, fontSize: fontSizes.FONT15, fontFamily: "TT-Octosquares-Medium" }}>
-                Use Current Location
-              </Text>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(0, 224, 255, 0.1)' }]}>
+                <Ionicons name="navigate" size={18} color={color.primaryText} />
+              </View>
+              <Text style={styles.currentLocationText}>Use Current Location</Text>
             </Pressable>
-
           )}
 
-          {/* From suggestions */}
-          {fromPlaces?.length > 0 && (
+          {/* Suggestions */}
+          {(fromPlaces?.length > 0 || places?.length > 0) ? (
             <>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Pickup Suggestions</Text>
-              </View>
-
+              {fromPlaces?.length > 0 && <Text style={styles.sectionHeader}>Pickup Suggestions</Text>}
               {fromPlaces.map((place, idx) => (
                 <Pressable
                   key={`from-${idx}`}
                   style={styles.resultRow}
                   onPress={() => {
-                    console.log("📍 Selected Place:", place); // <-- LOG FULL PLACE
-
-                    handleFromPlaceSelect(
-                      place.place_id || place.placeId || place?.result?.place_id,
-                      place.description || place?.description || place?.result?.formatted_address
-                    );
+                    handleFromPlaceSelect(place.place_id || place.placeId, place.description);
                     snapTo("COLLAPSED");
                   }}
                 >
-                  <Location colors={color.primaryText} />
-                  <View style={{ marginLeft: 12, flex: 1 }}>
-                    <Text style={styles.resultMain}>{place.description || place?.result?.formatted_address}</Text>
-                    <Text style={styles.resultSub}>{place.structured_formatting?.secondary_text || ""}</Text>
+                  <View style={styles.iconBox}><Ionicons name="location-outline" size={20} color="#ccc" /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.resultMain}>{place.description}</Text>
+                    <Text style={styles.resultSub} numberOfLines={1}>{place.structured_formatting?.secondary_text}</Text>
                   </View>
                 </Pressable>
               ))}
-            </>
-          )}
 
-          {/* To suggestions */}
-          {places?.length > 0 && (
-            <>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Destination Suggestions</Text>
-              </View>
-
+              {places?.length > 0 && <Text style={styles.sectionHeader}>Destinations</Text>}
               {places.map((place, idx) => (
                 <Pressable
                   key={`to-${idx}`}
                   style={styles.resultRow}
                   onPress={() => {
-                    console.log("📍 Selected Place:", place); // <-- LOG FULL PLACE
-                    handlePlaceSelect(
-                      place.place_id || place.placeId || place?.result?.place_id,
-                      place.description || place?.description || place?.result?.formatted_address
-                    );
+                    handlePlaceSelect(place.place_id || place.placeId, place.description);
                     snapTo("COLLAPSED");
                   }}
                 >
-                  <Gps colors={color.primaryText} />
-                  <View style={{ marginLeft: 12, flex: 1 }}>
-                    <Text style={styles.resultMain}>{place.description || place?.result?.formatted_address}</Text>
-                    <Text style={styles.resultSub}>{place.structured_formatting?.secondary_text || ""}</Text>
+                  <View style={styles.iconBox}><Ionicons name="flag-outline" size={20} color="#ccc" /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.resultMain}>{place.description}</Text>
+                    <Text style={styles.resultSub} numberOfLines={1}>{place.structured_formatting?.secondary_text}</Text>
                   </View>
                 </Pressable>
               ))}
             </>
-          )}
-
-          {/* Saved Places */}
-          {!isFindingLocation && (
-            <>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Saved Places</Text>
-                <Text style={styles.sectionSub}>{savedLoading ? "Loading..." : `${savedPlaces.length} items`}</Text>
-              </View>
-
-              {savedPlaces.length === 0 ? (
-                <View style={styles.emptySaved}>
-                  <Text style={styles.emptyText}>No saved places yet.</Text>
+          ) : (
+            // SAVED PLACES (Only show if not searching)
+            !isFindingLocation && (
+              <>
+                <View style={styles.savedHeader}>
+                  <Text style={styles.sectionHeader}>Saved Places</Text>
+                  <Text style={styles.savedCount}>{savedLoading ? "..." : savedPlaces.length}</Text>
                 </View>
-              ) : (
-                savedPlaces.map((p, i) => renderSavedPlace(p, i))
-              )}
-            </>
+                {savedPlaces.length === 0 ? (
+                  <Text style={styles.emptyText}>No saved places yet.</Text>
+                ) : (
+                  savedPlaces.map((p, i) => renderSavedPlace(p, i))
+                )}
+              </>
+            )
           )}
 
         </Animated.ScrollView>
       </View>
-    </Animated.View >
+    </Animated.View>
   );
 }
 
-// styles (kept same as you provided; no layout changes)
 const styles = StyleSheet.create({
-  handleWrap: {
-    paddingTop: 8,
-    paddingBottom: 8,
-    backgroundColor: "transparent",
+  sheetContainer: {
+    position: "absolute",
+    left: 0, right: 0, bottom: 0,
+    backgroundColor: color.subPrimary,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
-  handle: {
-    width: 40,
-    height: 6,
-    borderRadius: 6,
-    backgroundColor: "#333",
-    alignSelf: "center",
-    marginBottom: 8,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    justifyContent: "space-between",
-  },
-  headerLeft: { padding: 8 },
-  headerRight: { padding: 8 },
-  headerTitle: {
-    fontSize: fontSizes.FONT20,
-    fontWeight: "600",
-    color: color.primaryText,
-    fontFamily: "TT-Octosquares-Medium",
-  },
+  
+  // Header Area
+  headerWrapper: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 5 },
+  handleContainer: { width: '100%', alignItems: 'center', paddingVertical: 10 },
+  handleBar: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  iconButton: { padding: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12 },
+  headerTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium" },
 
-  body: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
+  // Body
+  contentBody: { flex: 1, paddingHorizontal: 20 },
 
-  pickupPill: {
-    width: windowWidth(220),
-    height: windowHeight(34),
-    borderRadius: 22,
-    backgroundColor: color.buttonBg,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginVertical: windowHeight(12),
-    alignSelf: 'flex-start'
+  // Inputs Card
+  inputCard: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginTop: 15,
+    marginBottom: 10,
   },
-  pickupText: {
-    fontSize: fontSizes.FONT15,
-    paddingHorizontal: 8,
-    fontFamily: "TT-Octosquares-Medium",
-    color: color.primary,
-  },
+  inputRow: { flexDirection: 'row', alignItems: 'center' },
+  dotIndicator: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#888', marginTop: 14 },
+  inputWrapper: { flex: 1, marginLeft: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingBottom: 8 },
+  inputLabel: { fontSize: 10, color: '#666', fontFamily: "TT-Octosquares-Medium", marginBottom: 2, letterSpacing: 1 },
+  textInput: { fontSize: 15, color: '#fff', fontFamily: "TT-Octosquares-Medium", height: 24, padding: 0 },
+  dividerContainer: { marginLeft: 3.5, height: 20, justifyContent: 'center' },
+  verticalLine: { width: 1, height: '100%', backgroundColor: 'rgba(255,255,255,0.1)' },
 
-  inputsCard: {
-    borderWidth: 2,
-    borderColor: color.border,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  autocompleteWrap: {
-    flex: 1,
-    marginLeft: 8,
-    height: 40,
-    justifyContent: "center",
-  },
+  // List
+  scrollList: { paddingBottom: 100, paddingTop: 10 },
+  currentLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 5 },
+  currentLocationText: { fontSize: 15, color: color.primaryText, fontFamily: "TT-Octosquares-Medium", marginLeft: 0 },
+  
+  sectionHeader: { fontSize: 14, color: '#666', fontFamily: "TT-Octosquares-Medium", marginTop: 15, marginBottom: 10, textTransform: 'uppercase' },
+  savedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, marginBottom: 10 },
+  savedCount: { fontSize: 12, color: '#444', fontFamily: "TT-Octosquares-Medium" },
 
-  resultsContainer: {
-    flex: 1,
-    marginTop: 6,
-  },
-
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 2,
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  sectionTitle: {
-    color: color.primaryText,
-    fontSize: fontSizes.FONT16,
-    fontFamily: "TT-Octosquares-Medium",
-  },
-  sectionSub: {
-    color: color.primaryGray,
-    fontSize: fontSizes.FONT12,
-    fontFamily: "TT-Octosquares-Medium",
-
-  },
-
-  resultRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: color.primaryGray,
-  },
-  resultMain: {
-    color: color.primaryText,
-    fontSize: fontSizes.FONT15,
-    fontFamily: "TT-Octosquares-Medium",
-  },
-  resultText: {
-    color: color.primaryText,
-    fontSize: fontSizes.FONT15,
-    fontFamily: "TT-Octosquares-Medium",
-  },
-  resultSub: {
-    color: color.primaryGray,
-    fontSize: fontSizes.FONT12,
-    fontFamily: "TT-Octosquares-Medium",
-    marginTop: 2,
-  },
-
-  emptySaved: {
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: color.primaryGray,
-    fontSize: fontSizes.FONT14,
-    fontFamily: "TT-Octosquares-Medium",
-  },
+  resultRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' },
+  iconBox: { width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
+  resultMain: { fontSize: 15, color: '#eee', fontFamily: "TT-Octosquares-Medium" },
+  resultSub: { fontSize: 12, color: '#888', marginTop: 3, fontFamily: "TT-Octosquares-Medium" },
+  emptyText: { fontSize: 14, color: '#555', textAlign: 'center', marginTop: 20, fontFamily: "TT-Octosquares-Medium" },
 });

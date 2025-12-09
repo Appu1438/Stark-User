@@ -1,118 +1,178 @@
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import React from "react";
-import { fontSizes, windowWidth, windowHeight } from "@/themes/app.constant";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from "react-native";
+import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import color from "@/themes/app.colors";
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import FooterNote from "@/components/common/footer-note";
 
-export default function index() {
-    const legalItems = [
-        {
-            label: "Terms & Conditions",
-            icon: "document-text-outline",
-            route: "/(routes)/legal/terms-and-conditions",
-        },
-        {
-            label: "Privacy Policy",
-            icon: "lock-closed-outline",
-            route: "/(routes)/legal/privacy-policy",
-        },
-        {
-            label: "Location Information",
-            icon: "navigate-circle-outline",
-            route: "/(routes)/legal/location-info",
-        },
-        {
-            label: "Cancellation & Refund Policy",
-            icon: "refresh-circle-outline",
-            route: "/(routes)/legal/cancellation-policy",
-        },
-        {
-            label: "Safety Guidelines",
-            icon: "shield-checkmark-outline",
-            route: "/(routes)/legal/safety-guidelines",
-        },
-        {
-            label: "App Usage Policy",
-            icon: "information-circle-outline",
-            route: "/(routes)/legal/app-usage-policy",
-        },
-    ];
+export default function LegalMenu() {
+  const legalItems = [
+    {
+      label: "Terms & Conditions",
+      icon: "document-text-outline",
+      route: "/(routes)/legal/terms-and-conditions",
+    },
+    {
+      label: "Privacy Policy",
+      icon: "lock-closed-outline",
+      route: "/(routes)/legal/privacy-policy",
+    },
+    {
+      label: "Location Information",
+      icon: "navigate-circle-outline",
+      route: "/(routes)/legal/location-info",
+    },
+    {
+      label: "Cancellation & Refund",
+      icon: "refresh-circle-outline",
+      route: "/(routes)/legal/cancellation-policy",
+    },
+    {
+      label: "Safety Guidelines",
+      icon: "shield-checkmark-outline",
+      route: "/(routes)/legal/safety-guidelines",
+    },
+    {
+      label: "App Usage Policy",
+      icon: "phone-portrait-outline",
+      route: "/(routes)/legal/app-usage-policy",
+    },
+  ];
 
-    return (
-        <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={{
-                flex: 1,
-                paddingHorizontal: windowWidth(20),
-                paddingTop: windowHeight(40),
-            }}
-        >
-            {/* ---------- HEADER ---------- */}
-            <Text
-                style={{
-                    fontSize: fontSizes.FONT26,
-                    fontFamily: "TT-Octosquares-Medium",
-                    color: color.primaryText,
-                    marginBottom: 25,
-                    textAlign: "center",
-                }}
-            >
-                Legal & Policies
-            </Text>
+  return (
+    <View style={styles.mainContainer}>
+      {/* Immersive Background */}
+      <LinearGradient 
+        colors={[color.bgDark ,color.subPrimary]} 
+        style={StyleSheet.absoluteFill} 
+      />
 
-            {/* ---------- LEGAL LINKS ---------- */}
-            <View
-                style={{
-                    backgroundColor: color.subPrimary,
-                    borderRadius: 16,
-                    //   borderWidth: 2,
-                    borderColor: color.border,
-                    overflow: "hidden",
-                }}
-            >
-                {legalItems.map((item, index) => (
-                    <TouchableOpacity
-                        key={index}
-                        onPress={() => router.push(item.route)}
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            paddingVertical: 18,
-                            paddingHorizontal: 15,
-                            // borderBottomWidth:
-                            //     index !== legalItems.length - 1 ? 1.5 : 0,
-                            // borderBottomColor: color.border,
-                        }}
-                    >
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                            <Ionicons
-                                name={item.icon}
-                                size={24}
-                                color={color.primaryText}
-                                style={{ marginRight: 15 }}
-                            />
-                            <Text
-                                style={{
-                                    fontSize: fontSizes.FONT18,
-                                    color: color.primaryText,
-                                    fontFamily: "TT-Octosquares-Medium",
-                                }}
-                            >
-                                {item.label}
-                            </Text>
-                        </View>
-                        <Ionicons
-                            name="chevron-forward-outline"
-                            size={22}
-                            color={color.primaryText}
-                        />
-                    </TouchableOpacity>
-                ))}
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          
+          {/* HEADER */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View>
+              <Text style={styles.pageTitle}>Legal & Policies</Text>
+              <Text style={styles.pageSubtitle}>Review terms and guidelines</Text>
             </View>
+          </View>
 
-            <View style={{ height: 80 }} />
+          {/* MENU CARD */}
+          <View style={styles.listCard}>
+            {legalItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => router.push(item.route)}
+                activeOpacity={0.7}
+                style={[
+                  styles.listItem,
+                  index === legalItems.length - 1 && styles.lastItem // Remove border for last item
+                ]}
+              >
+                <View style={styles.itemLeft}>
+                  <View style={styles.iconBox}>
+                    <Ionicons name={item.icon} size={20} color={color.primaryGray} />
+                  </View>
+                  <Text style={styles.itemText}>{item.label}</Text>
+                </View>
+                
+                <Ionicons name="chevron-forward" size={18} color="#666" />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* FOOTER INFO */}
+          <View style={styles.footerContainer}>
+            <MaterialIcons name="security" size={18} color="#666" />
+            <Text style={styles.footerText}>
+              All policies are subject to the latest local regulations.
+            </Text>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.supportLink}
+            onPress={() => router.push("/(routes)/profile/help-support")}
+          >
+            <Text style={styles.supportText}>Have questions?</Text>
+            <Text style={styles.supportAction}>Contact Support</Text>
+          </TouchableOpacity>
+
+          <FooterNote />
+
         </ScrollView>
-    );
+      </SafeAreaView>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  mainContainer: { flex: 1, backgroundColor: "#050505" },
+  scrollContent: { padding: 20, paddingBottom: 50 },
+
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30, gap: 15 },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  pageTitle: { fontSize: 24, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
+  pageSubtitle: { fontSize: 13, color: "#888", fontFamily: "TT-Octosquares-Medium" },
+
+  // List Card
+  listCard: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 25,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  lastItem: { borderBottomWidth: 0 },
+  
+  itemLeft: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+  iconBox: {
+    width: 38, height: 38, borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center', justifyContent: 'center'
+  },
+  itemText: {
+    fontSize: 16,
+    color: '#eee',
+    fontFamily: "TT-Octosquares-Medium",
+  },
+
+  // Footer
+  footerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  footerText: {
+    color: '#666',
+    fontSize: 12,
+    fontFamily: "TT-Octosquares-Medium",
+    textAlign: 'center',
+    flex: 1,
+  },
+
+  // Support Link
+  supportLink: { alignItems: 'center', marginTop: 10, marginBottom: 20 },
+  supportText: { color: '#888', fontSize: 13, fontFamily: "TT-Octosquares-Medium", marginBottom: 2 },
+  supportAction: { color: color.primaryGray, fontSize: 14, fontFamily: "TT-Octosquares-Medium", textDecorationLine: 'underline' },
+});

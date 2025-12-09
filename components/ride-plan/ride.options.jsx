@@ -29,6 +29,9 @@ const SNAP_POINTS = {
   FULL: SCREEN_HEIGHT - (Platform.OS === "ios" ? 40 : 24),
 };
 
+// Maximum distance (km) for showing Auto option
+const AUTO_MAX_DISTANCE = 25;
+
 export default function RideOptions({
   driverLists = [],
   driverLoader,
@@ -52,7 +55,7 @@ export default function RideOptions({
   const [expanded, setExpanded] = useState(false);
 
   // Card controllers per vehicleType
-  const cardAnimRefs = useRef({}); // { vehicleType: { expand: Animated.Value(0), arrow: Animated.Value(0), pulse: Animated.Value(1) } }
+  const cardAnimRefs = useRef({});
 
   // convenience: initialize controllers for a vehicle type
   const ensureCardControllers = (vehicleType) => {
@@ -187,7 +190,7 @@ export default function RideOptions({
         }),
         Animated.sequence(shouldExpand
           ? [
-            Animated.timing(ctrl.pulse, { toValue: 1.06, duration: 160, useNativeDriver: true }),
+            Animated.timing(ctrl.pulse, { toValue: 1.02, duration: 160, useNativeDriver: true }),
             Animated.timing(ctrl.pulse, { toValue: 1, duration: 300, useNativeDriver: true }),
           ]
           : [Animated.timing(ctrl.pulse, { toValue: 1, duration: 1, useNativeDriver: true })]
@@ -209,7 +212,7 @@ export default function RideOptions({
     // animated values for card content
     const cardHeight = ctrl.expand.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, windowHeight(400)], // expanded content height
+      outputRange: [0, windowHeight(430)], // Slightly increased for better spacing
       extrapolate: "clamp",
     });
     const cardOpacity = ctrl.expand.interpolate({
@@ -231,16 +234,13 @@ export default function RideOptions({
         key={vehicleType}
         style={[styles.pulseContainer, { transform: [{ scale: pulseScale }] }]}
       >
-        {/* !! IMPORTANT FIX !!
-        This was changed from <ScrollView> to <View>. 
-        The card itself should not be a ScrollView.
-      */}
         <View
           style={[
             styles.cardContainer,
             {
-              borderColor: isSelected ? color.primaryGray : color.border,
+              borderColor: isSelected ? color.primaryGray : 'rgba(255,255,255,0.08)',
               backgroundColor: color.subPrimary,
+              elevation: isSelected ? 10 : 2,
             },
           ]}
         >
@@ -307,12 +307,10 @@ export default function RideOptions({
               style={[
                 styles.expandedContainer,
                 {
-                  // Animated styles
                   height: cardHeight,
                   opacity: cardOpacity,
                   transform: [{ translateY: cardTranslateY }],
-                  // Static styles (subtle top border for separation)
-                  borderTopColor: '#222',
+                  borderTopColor: 'rgba(255,255,255,0.05)',
                 },
               ]}
             >
@@ -324,38 +322,23 @@ export default function RideOptions({
                 {/* Tags (Restyled) */}
                 <View style={styles.tagsContainer}>
                   <View style={styles.tag}>
-                    <Text
-                      style={[
-                        styles.tagText,
-                        { color: color.primaryText, fontSize: fontSizes.FONT12 },
-                      ]}
-                    >
-                      👤 {driver.capacity} Seats
+                    <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
+                      Capacity : {driver.capacity} Seats
                     </Text>
                   </View>
 
                   {distance && (
                     <View style={styles.tag}>
-                      <Text
-                        style={[
-                          styles.tagText,
-                          { color: color.primaryText, fontSize: fontSizes.FONT12 },
-                        ]}
-                      >
-                        🚗 {distance.toFixed(1)} km
+                      <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
+                        Distance : {Number(distance).toFixed(1)} km
                       </Text>
                     </View>
                   )}
 
                   {travelTimes.driving && (
                     <View style={styles.tag}>
-                      <Text
-                        style={[
-                          styles.tagText,
-                          { color: color.primaryText, fontSize: fontSizes.FONT10 },
-                        ]}
-                      >
-                        🕒 ETA: {getEstimatedArrivalTime(travelTimes.driving)}
+                      <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
+                        Drop Off : {getEstimatedArrivalTime(travelTimes.driving)}
                       </Text>
                     </View>
                   )}
@@ -363,100 +346,65 @@ export default function RideOptions({
 
                 {/* --- Details Section 1: Arrival & Duration --- */}
                 <View style={styles.detailSection}>
-                  <Text
-                    style={[
-                      styles.detailHeader,
-                      { color: color.primaryText, fontSize: fontSizes.FONT15 },
-                    ]}
-                  >
-                    🚗 Driver arrival: {estimateArrivalFromDriver(
-                      driver,
-                      currentLocation
-                    )}
+                  <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
+                    TRIP DETAILS
+                  </Text>
+                  <Text style={[styles.detailText, { color: color.primaryText, fontSize: fontSizes.FONT15 }]}>
+                    Driver arrival in {estimateArrivalFromDriver(driver, currentLocation)}
                   </Text>
 
                   {travelTimes.driving && (
-                    <Text
-                      style={[
-                        styles.detailText,
-                        { color: '#ccc', fontSize: fontSizes.FONT14 },
-                      ]}
-                    >
-                      ⏱ Expected ride duration: {getEstimatedArrivalTime(
-                        travelTimes.driving
-                      )}
+                    <Text style={[styles.detailSubText, { color: '#888', fontSize: fontSizes.FONT13 }]}>
+                      Expected drop off : {getEstimatedArrivalTime(travelTimes.driving)}
                     </Text>
                   )}
                 </View>
 
                 {/* --- Details Section 2: Fare --- */}
                 <View style={styles.detailSection}>
-                  <Text
-                    style={[
-                      styles.detailHeader,
-                      { color: color.primaryText, fontSize: fontSizes.FONT15 },
-                    ]}
-                  >
-                    💵 Fare Breakdown
+                  <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
+                    FARE BREAKDOWN
                   </Text>
                   {[
-                    'Fare calculated based on Km',
-                    '5% taxes included in final price',
+                    'Base fare calculated based on Km',
+                    'Includes applicable taxes (5%)',
                   ].map((item, i) => (
-                    <Text
-                      key={i}
-                      style={[
-                        styles.detailListItem,
-                        { color: '#aaa', fontSize: fontSizes.FONT13 },
-                      ]}
-                    >
-                      • {item}
-                    </Text>
+                    <View key={i} style={styles.bulletRow}>
+                      <View style={styles.bullet} />
+                      <Text style={[styles.detailListItem, { color: '#aaa', fontSize: fontSizes.FONT13 }]}>
+                        {item}
+                      </Text>
+                    </View>
                   ))}
                 </View>
 
                 {/* --- Details Section 3: Features --- */}
                 <View style={styles.detailSection}>
-                  <Text
-                    style={[
-                      styles.detailHeader,
-                      { color: color.primaryText, fontSize: fontSizes.FONT15 },
-                    ]}
-                  >
-                    ✨ Features
+                  <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
+                    VEHICLE FEATURES
                   </Text>
-                  {CAB_FEATURES[vehicleType].map((feat, idx) => (
-                    <Text
-                      key={idx}
-                      style={[
-                        styles.detailListItem,
-                        { color: '#aaa', fontSize: fontSizes.FONT13 },
-                      ]}
-                    >
-                      • {feat}
-                    </Text>
+                  {(CAB_FEATURES[vehicleType] || []).map((feat, idx) => (
+                    <View key={idx} style={styles.bulletRow}>
+                      <View style={styles.bullet} />
+                      <Text style={[styles.detailListItem, { color: '#ddd', fontSize: fontSizes.FONT13 }]}>
+                        {feat}
+                      </Text>
+                    </View>
                   ))}
                 </View>
 
-                {/* --- Details Section 4: Safety (no bottom border) --- */}
+                {/* --- Details Section 4: IMPORTANT NOTE (Replaces Safety) --- */}
                 <View style={[styles.detailSection, styles.lastDetailSection]}>
-                  <Text
-                    style={[
-                      styles.detailHeader,
-                      { color: color.primaryText, fontSize: fontSizes.FONT15 },
-                    ]}
-                  >
-                    🔒 Safety & Info
-                  </Text>
-                  <Text
-                    style={[
-                      styles.detailListItem,
-                      { color: '#aaa', fontSize: fontSizes.FONT13 },
-                    ]}
-                  >
-                    All rides are monitored for safety. Driver & vehicle details will
-                    be shared after booking confirmation.
-                  </Text>
+                  <View style={styles.noteContainer}>
+                    <View style={styles.noteHeaderRow}>
+                      <Text style={[styles.premiumHeader, { color: color.primaryText, marginBottom: 0 }]}>
+                        IMPORTANT NOTE
+                      </Text>
+                    </View>
+                    <Text style={[styles.detailListItem, { color: '#ccc', fontSize: fontSizes.FONT13, lineHeight: 20, marginTop: 4 }]}>
+                      Tolls, parking fees, and interstate permits are extra and applicable over the fare.
+                    </Text>
+                  </View>
                 </View>
               </Animated.ScrollView>
 
@@ -469,14 +417,24 @@ export default function RideOptions({
 
   // If no drivers
   const uniqueVehicleTypes = Array.from(new Set(driverLists?.map((d) => d.vehicle_type)));
+  // filter only vehicle types that have valid lat/lng
   const availableVehicleTypes = uniqueVehicleTypes.filter((vehicleType) =>
     driverLists.some((d) => d.vehicle_type === vehicleType && d.latitude && d.longitude)
   );
-  let sortedVehicleTypes;
 
-  if (availableVehicleTypes.length > 0) {
-    const vehicleOrder = ["Hatchback", "Sedan", "Suv"];
-    sortedVehicleTypes = availableVehicleTypes.sort(
+  // Exclude Auto when distance > AUTO_MAX_DISTANCE
+  const numericDistance = Number(distance);
+  const filteredVehicleTypes = availableVehicleTypes.filter((v) => {
+    if (v === "Auto" && !Number.isNaN(numericDistance) && numericDistance > AUTO_MAX_DISTANCE) {
+      return false;
+    }
+    return true;
+  });
+
+  let sortedVehicleTypes = filteredVehicleTypes;
+  if (filteredVehicleTypes.length > 0) {
+    const vehicleOrder = ["Auto", "Hatchback", "Sedan", "Suv"];
+    sortedVehicleTypes = filteredVehicleTypes.sort(
       (a, b) => vehicleOrder.indexOf(a) - vehicleOrder.indexOf(b)
     );
   }
@@ -499,7 +457,7 @@ export default function RideOptions({
   // header shrink animation (optional subtle)
   const headerScale = sheetAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 1.02],
+    outputRange: [1, 1.01],
   });
 
   // toggle full/half when user taps handle
@@ -516,16 +474,16 @@ export default function RideOptions({
       <Animated.View style={{
         padding: 10,
         alignItems: "center",
-        borderBottomWidth: 1,
-        borderBottomColor: "#1f1f1f",
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: "rgba(255,255,255,0.1)",
         transform: [{ scale: headerScale }]
       }}>
-        <Pressable onPress={toggleSheet} style={{ width: 60, alignItems: "center" }}>
+        <Pressable onPress={toggleSheet} style={{ width: 60, alignItems: "center", paddingBottom: 5 }}>
           <View style={{
-            width: 36,
-            height: 5,
-            borderRadius: 3,
-            backgroundColor: "#333",
+            width: 40,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: "rgba(255,255,255,0.3)",
             marginBottom: 8,
           }} />
         </Pressable>
@@ -551,8 +509,9 @@ export default function RideOptions({
             fontWeight: "600",
             fontFamily: "TT-Octosquares-Medium",
             color: color.primaryText,
+            letterSpacing: 0.5
           }}>
-            Gathering Options
+            {driverLoader ? 'Gathering Options' : ' Select Ride'}
           </Text>
 
           <View style={{ width: 32 }} />
@@ -570,7 +529,7 @@ export default function RideOptions({
             <ActivityIndicator size={"large"} color={color.primaryGray} />
           </View>
         ) : (
-          availableVehicleTypes.length === 0 ? (
+          (sortedVehicleTypes.length === 0) ? (
             <View style={{
               flex: 1,
               justifyContent: "center",
@@ -591,7 +550,7 @@ export default function RideOptions({
               {/* Scrollable list inside sheet. When sheet is not full, we disable inner scroll to allow drag */}
               <Animated.ScrollView
                 style={{ paddingHorizontal: 10 }}
-                contentContainerStyle={{ paddingBottom: 40 }}
+                contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}
                 scrollEnabled={expanded}
                 showsVerticalScrollIndicator={false}
                 // when sheet is not expanded, capture touch to pan instead of scroll
@@ -609,8 +568,8 @@ export default function RideOptions({
               <View style={{
                 paddingHorizontal: windowWidth(10),
                 paddingVertical: 12,
-                borderTopWidth: 1,
-                borderTopColor: "#1b1b1b",
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: "rgba(255,255,255,0.1)",
                 backgroundColor: "transparent",
               }}>
                 <Button
@@ -627,25 +586,19 @@ export default function RideOptions({
   );
 }
 
-// Make sure to import StyleSheet from 'react-native'
-// Make sure to import StyleSheet from 'react-native'
 const styles = StyleSheet.create({
   pulseContainer: {
-    marginVertical: 10, // Added a bit more vertical space
+    marginVertical: 6,
   },
   cardContainer: {
     borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 1, // Base border width
-    // --- Premium Finish: Shadow ---
+    borderWidth: 1,
+    // --- Premium Shadow ---
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
     shadowRadius: 10,
-    elevation: 8,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -654,80 +607,113 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   vehicleImage: {
-    width: 80, // Slightly larger image
+    width: 85,
     height: 60,
   },
   infoContainer: {
     flex: 1,
     gap: 4,
+    justifyContent: 'center'
   },
   vehicleName: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontWeight: '600', // Make the name pop
+    letterSpacing: 0.5,
   },
   driverEta: {
     fontFamily: 'TT-Octosquares-Medium',
+    opacity: 0.8
   },
   fareContainer: {
     alignItems: 'flex-end',
-    gap: 8,
+    gap: 6,
   },
   arrowIcon: {
-    fontSize: 18,
+    fontSize: 20,
+    opacity: 0.7
   },
   expandedContainer: {
     overflow: 'hidden',
-    borderTopWidth: 1, // Separator line
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   detailsScrollView: {
-    // The animated view controls the height
-    paddingBottom: 16, // Ensure scroll content has padding at the bottom
+    paddingBottom: 20,
     flex: 1
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 16, // Give tags their own vertical space
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
   },
-  // --- Premium Finish: Pill Tags ---
   tag: {
-    flexDirection: 'row', // To align icon/emoji with text
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6, // Space between emoji and text
-    backgroundColor: 'rgba(255, 255, 255, 0.08)', // More subtle background
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20, // Pill shape
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)'
   },
   tagText: {
     fontFamily: 'TT-Octosquares-Medium',
-    color: '#E0E0E0', // Slightly brighter text
+    opacity: 0.9,
   },
-  // --- Premium Finish: Section Dividers ---
   detailSection: {
-    paddingHorizontal: 16, // Indent the content
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#222', // Subtle divider
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   lastDetailSection: {
-    borderBottomWidth: 0, // No border on the last item
+    borderBottomWidth: 0,
   },
-  detailHeader: {
+  premiumHeader: {
     fontFamily: 'TT-Octosquares-Medium',
-    marginBottom: 10, // More space after the header
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    opacity: 0.7,
   },
   detailText: {
     fontFamily: 'TT-Octosquares-Medium',
-    lineHeight: 22, // Better readability
-    marginBottom: 8,
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  detailSubText: {
+    fontFamily: 'TT-Octosquares-Medium',
+    marginTop: 2
   },
   detailListItem: {
     fontFamily: 'TT-Octosquares-Medium',
-    lineHeight: 22, // Better readability
-    marginBottom: 6,
+    lineHeight: 20,
   },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  bullet: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#666',
+    marginTop: 8,
+    marginRight: 10,
+  },
+  noteContainer: {
+    backgroundColor: 'rgba(255, 200, 0, 0.05)', // Very subtle yellow tint
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 200, 0, 0.1)',
+  },
+  noteHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6
+  }
 });

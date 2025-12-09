@@ -36,6 +36,7 @@ import { CAB_TYPES, DAILY_DESTINATIONS, EXPLORE_MORE, FEATURES, NEARBY_PLACES } 
 import AppAlert from "@/components/modal/alert-modal/alert.modal";
 import { useUserLocationStore } from "@/store/userLocationStore";
 import { getDistrict } from "@/utils/ride/getDistrict";
+import FooterNote from "@/components/common/footer-note";
 
 
 export default function Home() {
@@ -193,23 +194,9 @@ export default function Home() {
           { useNativeDriver: true }
         )}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#f73939"]} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[color.primary]} />
         }
       >
-        {/* Header */}
-        {/* <View style={[styles.container, external.ph_20]}>
-          <Text
-            style={{
-              fontFamily: "TT-Octosquares-Medium",
-              fontSize: fontSizes.FONT25,
-              color: color.primaryText,
-              marginTop: windowHeight(15),
-            }}
-          >
-            Stark
-          </Text>
-          <LocationSearchBar />
-        </View> */}
 
         {/* Intro / Hero Card */}
         <LinearGradient
@@ -288,7 +275,7 @@ export default function Home() {
                   marginRight: 15,
                   borderRadius: 18,
                   overflow: "hidden",
-                  width: windowWidth(280),
+                  width: windowWidth(320),
                   height: windowHeight(150),
                   backgroundColor: color.darkPrimary,
                 }}
@@ -412,7 +399,7 @@ export default function Home() {
                   marginRight: 12,
                   borderRadius: 15,
                   overflow: "hidden",
-                  width: windowWidth(280),
+                  width: windowWidth(320),
                   height: windowHeight(150),
                   backgroundColor: color.darkPrimary,
                 }}
@@ -601,6 +588,8 @@ export default function Home() {
             }
           />
         </Section>
+
+        {/* <FooterNote /> */}
 
       </Animated.ScrollView>
 

@@ -5,7 +5,7 @@ import color from "@/themes/app.colors";
 import RideCard from "@/components/ride/ride.card";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { windowHeight } from "@/themes/app.constant";
+import { windowHeight, windowWidth } from "@/themes/app.constant";
 import { useGetUserData, useGetUserRideHistories } from "@/hooks/useGetUserData";
 import RideHistorySkeleton from "./ride-history-skelton.screen";
 
@@ -66,7 +66,7 @@ export default function RideHistoryScreen() {
                         You didn't take any ride yet!
                     </Text>
                 }
-                contentContainerStyle={{ paddingBottom: 10 }}
+                contentContainerStyle={{ paddingBottom: windowWidth(60) }}
                 showsVerticalScrollIndicator={false}
 
             />

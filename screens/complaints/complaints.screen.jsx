@@ -11,8 +11,9 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import color from "@/themes/app.colors";
 import Button from "@/components/common/button";
@@ -21,6 +22,7 @@ import { useGetUserRideHistories } from "@/hooks/useGetUserData";
 import axiosInstance from "@/api/axiosInstance";
 import ComplaintSkeleton from "./complaints-skelton.screen";
 import AppAlert from "@/components/modal/alert-modal/alert.modal";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Complaints() {
   const { recentRides } = useGetUserRideHistories();
@@ -142,333 +144,211 @@ export default function Complaints() {
     }
   };
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: color.background }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={{
-          flex: 1,
-          paddingHorizontal: windowWidth(25),
-          paddingTop: windowHeight(40),
-          paddingBottom: windowHeight(80),
-        }}
-      >
-        {/* HEADER */}
-        <Text
-          style={{
-            fontSize: fontSizes.FONT26,
-            fontFamily: "TT-Octosquares-Medium",
-            color: color.primaryText,
-            textAlign: "center",
-            marginBottom: 12,
-          }}
-        >
-          Register Complaint
-        </Text>
+    <View style={styles.mainContainer}>
+      <LinearGradient colors={[color.bgDark, color.subPrimary]} style={StyleSheet.absoluteFill} />
 
-        <Text
-          style={{
-            fontSize: fontSizes.FONT14,
-            fontFamily: "TT-Octosquares-Medium",
-            color: color.primaryGray,
-            textAlign: "center",
-            marginBottom: 20,
-          }}
-        >
-          Select a ride (optional), describe your issue, and our support team will assist you soon.
-        </Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* FORM CARD */}
-        <LinearGradient
-          colors={[color.darkPrimary, color.bgDark]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            borderRadius: 18,
-            padding: 18,
-            marginBottom: 30,
-          }}
-        >
-          {/* Related Ride (optional) */}
-          <Text
-            style={{
-              color: color.primaryText,
-              fontSize: fontSizes.FONT18,
-              fontFamily: "TT-Octosquares-Medium",
-              marginBottom: 10,
-            }}
-          >
-            Related Ride (optional)
-          </Text>
+            {/* HEADER */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={styles.pageTitle}>Support & Issues</Text>
+            </View>
 
-          <TouchableOpacity
-            onPress={() => setRideModalVisible(true)}
-            activeOpacity={0.85}
-            style={{
-              backgroundColor: "rgba(255,255,255,0.03)",
-              borderRadius: 12,
-              paddingVertical: 12,
-              paddingHorizontal: 15,
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.06)",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 18,
-            }}
-          >
-            <Text
-              style={{
-                color: selectedRide ? color.primaryText : "#777",
-                fontFamily: "TT-Octosquares-Medium",
-                fontSize: fontSizes.FONT15,
-              }}
-            >
-              {selectedRide
-                ? `${selectedRide.destinationLocationName || "Unnamed Ride"} • ₹${selectedRide.totalFare}`
-                : "Select a recent ride (optional)"}
-            </Text>
-            <Ionicons name="chevron-down-outline" size={18} color={color.primaryText} />
-          </TouchableOpacity>
+            {/* FORM CARD */}
+            <View style={styles.formCard}>
+              <Text style={styles.cardTitle}>Report an Issue</Text>
 
-          {/* Category chips */}
-          <Text
-            style={{
-              color: color.primaryText,
-              fontSize: fontSizes.FONT18,
-              fontFamily: "TT-Octosquares-Medium",
-              marginBottom: 10,
-            }}
-          >
-            Complaint Type
-          </Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
-            {["Ride Issue", "Payment Issue", "Driver Behavior", "App Issue", "Other"].map((item) => (
+              {/* RIDE SELECTOR */}
               <TouchableOpacity
-                key={item}
-                onPress={() => setCategory(item)}
-                style={{
-                  paddingVertical: 8,
-                  paddingHorizontal: 16,
-                  borderRadius: 20,
-                  backgroundColor: category === item ? color.buttonBg : "rgba(255,255,255,0.06)",
-                  marginRight: 10,
-                  borderWidth: 1,
-                  borderColor: category === item ? color.primary : "rgba(255,255,255,0.08)",
-                }}
-                activeOpacity={0.85}
+                onPress={() => setRideModalVisible(true)}
+                style={styles.inputField}
               >
-                <Text
-                  style={{
-                    color: category === item ? color.primary : color.primaryText,
-                    fontFamily: "TT-Octosquares-Medium",
-                    fontSize: fontSizes.FONT14,
-                  }}
-                >
-                  {item}
+                <Text style={[styles.inputText, !selectedRide && { color: '#666' }]}>
+                  {selectedRide
+                    ? `${selectedRide.currentLocationName} → ${selectedRide.destinationLocationName}`
+                    : "Select Related Ride (Optional)"}
                 </Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
 
-          {/* Message */}
-          <Text
-            style={{
-              color: color.primaryText,
-              fontSize: fontSizes.FONT18,
-              fontFamily: "TT-Octosquares-Medium",
-              marginBottom: 10,
-            }}
-          >
-            Describe Your Issue
-          </Text>
-
-          <TextInput
-            style={{
-              backgroundColor: "rgba(255,255,255,0.03)",
-              borderRadius: 12,
-              padding: 12,
-              fontSize: fontSizes.FONT16,
-              color: color.primaryText,
-              minHeight: 110,
-              textAlignVertical: "top",
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.06)",
-              fontFamily: "TT-Octosquares-Medium",
-            }}
-            placeholder="Type your message here..."
-            placeholderTextColor="#999"
-            multiline
-            value={message}
-            onChangeText={setMessage}
-          />
-
-          <View style={{ marginTop: 18 }}>
-            <Button
-              title={submitting ? <ActivityIndicator color={color.primary} /> : "Submit Complaint"}
-              onPress={handleSubmit}
-              disabled={submitting}
-            />
-          </View>
-        </LinearGradient>
-
-        {/* Complaints header */}
-        <Text
-          style={{
-            fontSize: fontSizes.FONT22,
-            fontFamily: "TT-Octosquares-Medium",
-            color: color.primaryText,
-            marginBottom: 12,
-          }}
-        >
-          Your Complaints
-        </Text>
-
-        {/* Loading indicator */}
-        {loadingComplaints ? (
-          <View style={{ alignItems: "center", marginTop: 24 }}>
-            <ActivityIndicator size="small" color={color.primary} />
-          </View>
-        ) : complaints.length === 0 ? (
-          <Text
-            style={{
-              fontSize: fontSizes.FONT16,
-              color: "#aaa",
-              fontFamily: "TT-Octosquares-Medium",
-              textAlign: "center",
-              marginTop: 24,
-            }}
-          >
-            No complaints registered yet.
-          </Text>
-        ) : (
-          <FlatList
-            data={complaints}
-            keyExtractor={(item) => (item._id || item.id || `${item.date}-${item.category}`)}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View
-                style={{
-                  backgroundColor: color.subPrimary,
-                  borderRadius: 14,
-                  padding: 14,
-                  marginBottom: 14,
-                  borderLeftWidth: 4,
-                  borderLeftColor: getStatusColor(item.status),
-                  shadowColor: "#000",
-                  shadowOpacity: 0.06,
-                  shadowRadius: 6,
-                  elevation: 2,
-                }}
-              >
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      fontSize: fontSizes.FONT16,
-                      fontFamily: "TT-Octosquares-Medium",
-                      color: color.primaryText,
-                    }}
-                  >
-                    {item.category}
-                  </Text>
-                  <Text style={{ color: getStatusColor(item.status), fontFamily: "TT-Octosquares-Medium", fontSize: fontSizes.FONT13 }}>
-                    {item.status || "Pending"}
-                  </Text>
-                </View>
-
-                {item.ride && (
-                  <Text
-                    style={{
-                      color: "#999",
-                      fontSize: fontSizes.FONT13,
-                      marginTop: 6,
-                      fontFamily: "TT-Octosquares-Medium",
-                    }}
-                  >
-                    Ride: {item.ride.destinationLocationName || "Unknown"} • ₹{item.ride.totalFare || "-"}
-                  </Text>
-                )}
-
-                <Text
-                  style={{
-                    color: "#aaa",
-                    fontSize: fontSizes.FONT14,
-                    marginVertical: 8,
-                    fontFamily: "TT-Octosquares-Medium",
-                  }}
-                  numberOfLines={2}
-                >
-                  {item.message}
-                </Text>
-
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Ionicons name="time-outline" size={14} color="#999" style={{ marginRight: 6 }} />
-                  <Text style={{ color: "#999", fontSize: fontSizes.FONT13, fontFamily: "TT-Octosquares-Medium" }}>
-                    {new Date(item.createdAt || item.date).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-            )}
-          />
-        )}
-      </ScrollView>
-
-      {/* RIDE SELECTION MODAL */}
-      <Modal visible={rideModalVisible} transparent animationType="fade" onRequestClose={() => setRideModalVisible(false)}>
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center", paddingHorizontal: 20 }}>
-          <View style={{ backgroundColor: color.subPrimary, width: "100%", borderRadius: 14, padding: 14, maxHeight: "72%" }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <Text style={{ fontSize: fontSizes.FONT18, fontFamily: "TT-Octosquares-Medium", color: color.primaryText }}>Select Your Ride</Text>
-              <TouchableOpacity onPress={() => { setSelectedRide(null); setRideModalVisible(false); }}>
-                <Text style={{ color: color.primaryText, fontFamily: "TT-Octosquares-Medium" }}>Clear</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView>
-              {recentRides && recentRides.length > 0 ? (
-                recentRides.map((ride) => (
+              {/* CATEGORY CHIPS */}
+              <Text style={styles.label}>Issue Type</Text>
+              <View style={styles.chipContainer}>
+                {["Ride Issue", "Payment Issue", "Driver Behaviour", "App Issue", "Other"].map((item) => (
                   <TouchableOpacity
-                    key={ride._id}
-                    onPress={() => {
-                      setSelectedRide(ride);
-                      setRideModalVisible(false);
-                    }}
-                    style={{ paddingVertical: 12, borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.06)" }}
+                    key={item}
+                    onPress={() => setCategory(item)}
+                    style={[styles.chip, category === item && styles.activeChip]}
                   >
-                    <Text style={{ color: color.primaryText, fontFamily: "TT-Octosquares-Medium", fontSize: fontSizes.FONT15 }}>
-                      {ride.destinationLocationName || "Unnamed Ride"}
-                    </Text>
-                    <Text style={{ color: "#aaa", fontSize: fontSizes.FONT13, marginTop: 4, fontFamily: "TT-Octosquares-Medium" }}>
-                      ₹{ride.totalFare} • {new Date(ride.createdAt).toLocaleDateString()}
-                    </Text>
+                    <Text style={[styles.chipText, category === item && styles.activeChipText]}>{item}</Text>
                   </TouchableOpacity>
-                ))
-              ) : (
-                <Text style={{ color: "#aaa", textAlign: "center", marginVertical: 20, fontFamily: "TT-Octosquares-Medium" }}>
-                  No recent rides found.
-                </Text>
-              )}
-            </ScrollView>
+                ))}
+              </View>
 
-            <View style={{ marginTop: 12 }}>
-              <Button title="Close" onPress={() => setRideModalVisible(false)} />
+              {/* MESSAGE INPUT */}
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={styles.textArea}
+                placeholder="Describe what happened..."
+                placeholderTextColor="#666"
+                multiline
+                value={message}
+                onChangeText={setMessage}
+              />
+
+              {/* SUBMIT BUTTON */}
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? <ActivityIndicator color="#000" /> : <Text style={styles.submitText}>Submit Report</Text>}
+              </TouchableOpacity>
+            </View>
+
+            {/* HISTORY SECTION */}
+            <Text style={styles.sectionTitle}>Previous Reports</Text>
+
+            {complaints.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Feather name="inbox" size={40} color="#333" />
+                <Text style={styles.emptyText}>No reports found</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={complaints}
+                keyExtractor={(item) => item._id || item.id}
+                scrollEnabled={false}
+                renderItem={({ item }) => (
+                  <View style={styles.complaintItem}>
+                    <View style={styles.complaintHeader}>
+                      <Text style={styles.complaintCategory}>{item.category}</Text>
+                      <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
+                        <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status || "Pending"}</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.complaintMessage} numberOfLines={2}>{item.message}</Text>
+
+                    {item.ride &&
+                      <View style={styles.modalRow}>
+                        <Text style={styles.modalLoc} numberOfLines={1}>{item.ride.currentLocationName}</Text>
+                        <Ionicons name="arrow-forward" size={14} color="#666" />
+                        <Text style={styles.modalLoc} numberOfLines={1}>{item.ride.destinationLocationName}</Text>
+                      </View>
+                    }
+
+                    <View style={styles.complaintFooter}>
+                      <Text style={styles.complaintDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                    </View>
+                  </View>
+                )}
+              />
+            )}
+
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        {/* RIDE MODAL */}
+        <Modal visible={rideModalVisible} transparent animationType="fade" onRequestClose={() => setRideModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Recent Ride</Text>
+                <TouchableOpacity onPress={() => setRideModalVisible(false)}><Ionicons name="close" size={24} color="#fff" /></TouchableOpacity>
+              </View>
+              <FlatList
+                data={recentRides}
+                keyExtractor={item => item._id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => { setSelectedRide(item); setRideModalVisible(false); }}
+                  >
+                    <View style={styles.modalRow}>
+                      <Text style={styles.modalLoc} numberOfLines={1}>{item.currentLocationName}</Text>
+                      <Ionicons name="arrow-forward" size={14} color="#666" />
+                      <Text style={styles.modalLoc} numberOfLines={1}>{item.destinationLocationName}</Text>
+                    </View>
+                    <Text style={styles.modalSub}>₹{item.totalFare} • {new Date(item.createdAt).toLocaleDateString()}</Text>
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={<Text style={styles.emptyText}>No recent rides found.</Text>}
+              />
             </View>
           </View>
-        </View>
-      </Modal>
-      <AppAlert
-        visible={showAlert}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        confirmText={alertConfig.confirmText}
-        showCancel={alertConfig.showCancel}
-        onCancel={() => setShowAlert(false)}
-        onConfirm={alertConfig.onConfirm}
-      />
+        </Modal>
 
-    </KeyboardAvoidingView>
+        <AppAlert
+          visible={showAlert}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          confirmText={alertConfig.confirmText}
+          showCancel={alertConfig.showCancel}
+          onConfirm={alertConfig.onConfirm}
+          onCancel={alertConfig.onCancel}
+        />
+      </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  mainContainer: { flex: 1, backgroundColor: "#050505" },
+  scrollContent: { padding: 20, paddingBottom: 50 },
+
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 15 },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  pageTitle: { fontSize: 24, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
+
+  // Form Card
+  formCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 30 },
+  cardTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 20 },
+
+  label: { fontSize: 12, color: '#888', marginBottom: 10, marginTop: 15, fontFamily: "TT-Octosquares-Medium" },
+
+  inputField: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  inputText: { color: '#fff', fontSize: 14, fontFamily: "TT-Octosquares-Medium", flex: 1 },
+
+  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'transparent' },
+  activeChip: { backgroundColor: color.buttonBg, borderColor: color.primary },
+  chipText: { color: '#888', fontSize: 12, fontFamily: "TT-Octosquares-Medium" },
+  activeChipText: { color: color.primary },
+
+  textArea: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 15, minHeight: 120, color: '#fff', textAlignVertical: 'top', fontFamily: "TT-Octosquares-Medium" },
+
+  submitButton: { backgroundColor: color.buttonBg, paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginTop: 25 },
+  submitText: { color: '#000', fontSize: 16, fontFamily: "TT-Octosquares-Medium" },
+
+  // History List
+  sectionTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 15 },
+  complaintItem: { backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' },
+  complaintHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  complaintCategory: { color: '#fff', fontSize: 14, fontFamily: "TT-Octosquares-Medium" },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusText: { fontSize: 10, fontFamily: "TT-Octosquares-Medium" },
+  complaintMessage: { color: color.primaryGray, fontSize: 13, lineHeight: 18, marginBottom: 10, fontFamily: "TT-Octosquares-Medium" },
+  complaintFooter: { flexDirection: 'row', alignItems: 'center', gap: 10, fontFamily: "TT-Octosquares-Medium" },
+  complaintDate: { color: color.primaryGray, fontSize: 11, fontFamily: "TT-Octosquares-Medium" },
+  rideTag: { color: color.primaryText, fontSize: 11, fontFamily: "TT-Octosquares-Medium" },
+
+  emptyState: { alignItems: 'center', padding: 40 },
+  emptyText: { color: '#444', marginTop: 10, fontFamily: "TT-Octosquares-Medium" },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#151515', borderRadius: 20, padding: 20, maxHeight: '60%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  modalTitle: { color: '#fff', fontSize: 18, fontFamily: "TT-Octosquares-Medium" },
+  modalItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  modalRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  modalLoc: { color: '#fff', fontSize: 14, flex: 1, fontFamily: "TT-Octosquares-Medium" },
+  modalSub: { color: '#666', fontSize: 12, fontFamily: "TT-Octosquares-Medium" },
+});

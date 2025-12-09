@@ -22,19 +22,19 @@ export const slides = [
   },
 ];
 
- export const vehicleImages = {
-    Auto: require("@/assets/images/vehicles/auto.png"),
-    Sedan: require("@/assets/images/vehicles/sedan.png"),
-    Suv: require("@/assets/images/vehicles/suv.png"),
-    Hatchback: require("@/assets/images/vehicles/hatchback.png"),
-  };
+export const vehicleImages = {
+  Auto: require("@/assets/images/vehicles/auto.png"),
+  Sedan: require("@/assets/images/vehicles/sedan.png"),
+  Suv: require("@/assets/images/vehicles/suv.png"),
+  Hatchback: require("@/assets/images/vehicles/hatchback.png"),
+};
 
- export  const vehicleNames = {
-    Auto: "Stark Mini",
-    Sedan: "Stark Prime",
-    Hatchback: "Stark Zip",
-    Suv: "Stark Max",
-  };
+export const vehicleNames = {
+  Auto: "Stark Mini",
+  Sedan: "Stark Prime",
+  Hatchback: "Stark Zip",
+  Suv: "Stark Max",
+};
 
 
 export const CAB_FEATURES = {
@@ -55,11 +55,26 @@ export const CAB_FEATURES = {
     "Fits 6–7 passengers",
     "Great for families",
     "High luggage capacity"
+  ],
+  Auto: [
+    "Perfect for quick city trips",
+    "Highly economical",
+    "Easy to navigate through traffic",
+    "Ideal for 2–3 passengers"
   ]
 };
 
 
+
 export const CAB_TYPES = [
+  {
+    id: "auto",
+    name: "Stark Mini",
+    quote: "Your quick, affordable way around the city.",
+    detailedQuote:
+      "“Stark Go is designed for fast, flexible, and budget-friendly travel. Perfect for short rides, market runs, and beating city traffic, it offers the quickest way to get wherever you're going. Enjoy convenience, efficiency, and a breezy ride — ideal for everyday mobility.”",
+    image: require("@/assets/images/featuring/stark-mini.png"), // <-- Add your auto image here
+  },
   {
     id: "sedan",
     name: "Stark Prime",

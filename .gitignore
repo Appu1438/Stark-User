@@ -39,3 +39,6 @@ yarn-error.*
 
 expo-env.d.ts
 # @end expo-cli
+
+google-services.json
+stark-910ad-firebase-adminsdk-fbsvc-398524bd10.json

@@ -1,8 +1,8 @@
-import { View, Text, Image, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, Image, Platform, ActivityIndicator, StyleSheet } from 'react-native'
 import React, { useState } from 'react'
 import AuthContainer from '@/utils/container/auth-container'
-import { windowHeight } from '@/themes/app.constant'
-import { styles } from './styles'
+import { fontSizes, windowHeight, windowWidth } from '@/themes/app.constant'
+// import { styles } from './styles'
 import Images from '@/utils/images'
 import SignInText from '@/components/login/signin.text'
 import { external } from '@/styles/external.style'
@@ -17,6 +17,8 @@ import { useCallback } from 'react';
 import axiosInstance from '@/api/axiosInstance'
 import color from '@/themes/app.colors'
 import AppAlert from '@/components/modal/alert-modal/alert.modal'
+import fonts from '@/themes/app.fonts'
+import { commonStyles } from '@/styles/common.style'
 export default function LoginScreen() {
   const [phone_number, setphone_number] = useState("");
   const [loading, setloading] = useState(false);
@@ -28,7 +30,7 @@ export default function LoginScreen() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        setPendingExit(true);    // show exit alert modal
+        // setPendingExit(true);    // show exit alert modal
         setShowAlert(true);      // open modal
         return true;             // block default behavior
       };
@@ -133,3 +135,63 @@ export default function LoginScreen() {
     />
   )
 }
+
+const styles = StyleSheet.create({
+  transformLine: {
+    transform: [{ rotate: "-90deg" }],
+    height: windowHeight(50),
+    width: windowWidth(120),
+    position: "absolute",
+    left: windowWidth(-50),
+    top: windowHeight(-20),
+  },
+  countryCodeContainer: {
+    width: windowWidth(89),
+    height: windowHeight(39),
+    backgroundColor: color.subPrimary
+
+  },
+  phoneNumberInput: {
+    width: windowWidth(326),
+    height: windowHeight(39),
+    backgroundColor: color.subPrimary,
+    borderRadius: 4,
+    marginHorizontal: windowHeight(9),
+    justifyContent: "center",
+    paddingHorizontal: windowHeight(9),
+    borderWidth: 1,
+    borderColor: color.border,
+  },
+  rememberMeText: {
+    fontWeight: "400",
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.FONT16,
+    color: color.primaryText,
+  },
+  forgotPasswordText: {
+    fontWeight: "400",
+    fontFamily: fonts.medium,
+    color: color.buttonBg,
+    fontSize: fontSizes.FONT16,
+  },
+  newUserContainer: {
+    ...external.fd_row,
+    ...external.ai_center,
+    ...external.mt_12,
+    ...external.as_center,
+  },
+  newUserText: {
+    ...commonStyles.regularText,
+  },
+  signUpText: {
+    ...commonStyles.mediumTextBlack12,
+    fontFamily: fonts.bold,
+    paddingHorizontal: windowHeight(4),
+  },
+  rememberTextView: {
+    ...external.fd_row,
+    ...external.ai_center,
+    ...external.mt_5,
+    ...external.js_space,
+  },
+});

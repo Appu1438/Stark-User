@@ -40,6 +40,18 @@ const styles = StyleSheet.create({
         color: color.primaryText,
         marginBottom: 0,
     },
+    // Hero Card
+    heroCard: {
+        marginHorizontal: 20, marginBottom: 30, padding: 24, borderRadius: 24,
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)'
+    },
+    heroTitle: { fontSize: 22, color: "#fff", fontFamily: "TT-Octosquares-Medium", marginBottom: 6 },
+    heroSubtitle: { fontSize: 13, color: "#888", fontFamily: "TT-Octosquares-Medium", lineHeight: 20 },
+    bookButton: {
+        marginTop: 20, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+        backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12
+    },
+    bookButtonText: { color: color.primary, fontSize: 14, fontFamily: "TT-Octosquares-Medium", marginRight: 8 },
 });
 
 export { styles };

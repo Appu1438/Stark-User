@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback, useDebugValue } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert, Platform, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking, Alert, Platform, ActivityIndicator, Animated } from "react-native";
 import MapView, { Marker, AnimatedRegion, PROVIDER_GOOGLE } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { useLocalSearchParams, router } from "expo-router";
 import axiosInstance from "@/api/axiosInstance";
 import socketService from "@/utils/socket/socketService";
-import { styles } from "./styles";
+// import { styles } from "./styles";
 import getVehicleIcon from "@/utils/ride/getVehicleIcon";
 import estimateArrivalFromDriver from "@/utils/ride/getEstimatedDriverArrival";
 import { Toast } from "react-native-toast-notifications";
@@ -687,8 +687,8 @@ export default function RideDetailScreen() {
                 <Image
                   source={driverIcon}
                   style={{
-                    width: 35,
-                    height: 35,
+                    width: windowWidth(35),
+                    height: windowHeight(35),
                     resizeMode: "contain",
                     transform: [
                       {
@@ -804,410 +804,307 @@ export default function RideDetailScreen() {
 
       {/* ========== DETAILS SECTION ========== */}
       <View style={styles.cardWrapper}>
+        {/* Handle Bar for Bottom Sheet feel */}
         <View style={styles.cardHandle} />
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <View style={styles.headerContainer}>
-            <Text style={styles.headerTitle}>Ride Details</Text>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: statusBadgeStyle.backgroundColor },
-              ]}
-            >
-              <Text
-                style={[styles.statusText, { color: statusBadgeStyle.color }]}
-              >
-                {statusBadgeText[ride?.status] || "Ride Booked"}
+          {/* --- HEADER: Title & Status --- */}
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.headerTitle}>Ride Details</Text>
+              <Text style={styles.headerSubtitle}>{ride?.distance} Km • Trip ID : {ride?.id?.slice(-6)}</Text>
+            </View>
+
+            <View style={[styles.statusBadge, { backgroundColor: statusBadgeStyle.backgroundColor }]}>
+              <Text style={[styles.statusText, { color: statusBadgeStyle.color }]}>
+                {statusBadgeText[ride?.status] || "Booked"}
               </Text>
             </View>
           </View>
 
-          {/* Driver Info */}
-          <View style={styles.driverSection}>
-            <Image
-              source={{
-                uri:
-                  driver?.profilePic ||
-                  ride.driverId?.profilePic ||
-                  getAvatar(ride?.driverId?.gender),
-              }}
-              style={styles.driverAvatar}
-            />
-            <View style={styles.driverInfo}>
-              <Text style={styles.driverName}>
-                {driver?.name ||
-                  ride.driverId?.name ||
-                  "Driver not assigned"}
-              </Text>
-
-              <View
-                style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}
-              >
-                <Text style={[styles.driverRating, { color: "#FFC107", marginRight: 8 }]}>
-                  {renderStars(driver?.rating || ride.driverId?.ratings || 0)}
-                </Text>
-                <Text style={styles.driverRating}>
-                  {" "}•{" "}
-                </Text>
-                <Text style={styles.driverRating}>
-                  Total Trips: {ride?.driverId?.totalRides}
-                </Text>
-              </View>
-
-              <Text style={styles.driverVehicle}>
-                {driver?.vehicle_type || ride.driverId?.vehicle_type || "-"} •{" "}
-                {driver?.vehicle_color || ride.driverId?.vehicle_color || "-"} •{" "}
-                {driver?.registration_number || ride.driverId?.registration_number || "-"}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Trip Info */}
-          <View style={styles.tripInfoContainer}>
-            {/* Pickup Row */}
-            <View style={styles.tripInfoRow}>
-              <View style={styles.tripInfoIcon}>
-                <Text style={styles.tripInfoIconText}>📍</Text>
-              </View>
-              <View style={styles.tripInfoTextContainer}>
-                <Text style={styles.tripInfoLabel}>Pickup Location</Text>
-                <Text style={styles.tripInfoValue} numberOfLines={2}>
-                  {ride.currentLocationName || "Current location"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Connector line */}
-            <View
-              style={{
-                position: "absolute",
-                left: windowWidth(24) + 15,
-                top: 38,
-                bottom: 38,
-                width: 2,
-                backgroundColor: "#e0e0e0",
-              }}
-            />
-
-            {/* Drop Row */}
-            <View style={styles.tripInfoRow}>
-              <View style={styles.tripInfoIcon}>
-                <Text style={styles.tripInfoIconText}>🏁</Text>
-              </View>
-              <View style={styles.tripInfoTextContainer}>
-                <Text style={styles.tripInfoLabel}>Drop Location</Text>
-                <Text style={styles.tripInfoValue} numberOfLines={2}>
-                  {ride.destinationLocationName || "Destination"}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Fare Info */}
-          {/* Fare Info */}
-          <View style={styles.fareContainer}>
-            {ride.status === "Arrived" && (
-              <View style={styles.fareRow}>
-                <Text style={styles.fareLabel}>OTP</Text>
-                <Text style={[styles.fareValue, styles.otpValue]}>
-                  {ride.otp}
-                </Text>
-              </View>
-            )}
-
-            {/* Always show total fare */}
-            <View style={styles.fareRow}>
-              <Text style={styles.fareLabel}>Total Fare</Text>
-              <Text style={styles.fareValue}>₹ {ride.totalFare}</Text>
-            </View>
-
-            {/* If ongoing or processing, show arrival estimate */}
-            {(ride.status === "Processing" || ride.status === "Ongoing") && (
-              <View style={styles.fareRow}>
-                <Text style={styles.fareLabel}>
-                  {ride.status === "Processing"
-                    ? "Estimated Driver Arrival"
-                    : "Estimated Time to Reach"}
-                </Text>
-                <Text style={styles.fareValue}>{arrivalTime}</Text>
-              </View>
-            )}
-
-            <View style={styles.fareRow}>
-              <Text style={styles.fareLabel}>Planned Distance</Text>
-              <Text style={styles.fareValue}>{ride.distance} Km</Text>
-            </View>
-
-            {/* If ongoing , show remaining distance */}
-            {(ride.status === "Ongoing") && (
-              <View style={styles.fareRow}>
-                <Text style={styles.fareLabel}>
-                  Remaining Distance
-                </Text>
-                <Text style={styles.fareValue}>
-                  {remainingDistance} Km
-                </Text>
-              </View>
-            )}
-
-            {/* Show Cancellation Details if cancelled */}
-            {ride.status === "Cancelled" && ride.cancelDetails && (
-              <>
-                <View style={styles.divider} />
-                <Text style={[styles.sectionTitle, { color: "red", marginBottom: 8 }]}>
-                  Cancellation Details
-                </Text>
-
-
-                <View style={styles.detailItem}>
-                  <MaterialIcons name={'cancel'} size={20} color={color.primaryGray} />
-                  <View style={styles.detailTextContainer}>
-                    <Text style={styles.detailLabel}>Cancelled At</Text>
-                    <Text style={styles.detailText} numberOfLines={2}>
-                      {new Date(ride.cancelDetails.cancelledAt).toLocaleString()
-                      }
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.detailItem}>
-                  <MaterialIcons name={'location-off'} size={20} color={color.primaryGray} />
-                  <View style={styles.detailTextContainer}>
-                    <Text style={styles.detailLabel}>Cancelled Location</Text>
-                    <Text style={styles.detailText} numberOfLines={2}>
-                      {`${ride.cancelDetails.cancelledLocationName}`}
-                    </Text>
-                  </View>
-                </View>
-
-
-                <View style={styles.fareRow}>
-                  <Text style={styles.fareLabel}>Travelled Distance</Text>
-                  <Text style={styles.fareValue}>
-                    {ride.cancelDetails.travelledDistance} km
-                  </Text>
-                </View>
-
-                <View style={styles.fareRow}>
-                  <Text style={styles.fareLabel}>Fare for Travelled Distance</Text>
-                  <Text style={styles.fareValue}>₹ {ride.cancelDetails.totalFare}</Text>
-                </View>
-
-                <View style={styles.fareRow}>
-                  <Text style={styles.fareLabel}>Cancelled By</Text>
-                  <Text style={styles.fareValue}>
-                    {ride.cancelDetails.cancelledBy === "user" ? "You" : "Driver"}
-                  </Text>
-                </View>
-              </>
-            )}
-          </View>
-
-          {ride.status === "Completed" && ride.rating && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Ratings Summary</Text>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-around",
-                  alignItems: "center",
-                  marginTop: 12,
+          {/* --- HERO SECTION: Driver & Vehicle Card --- */}
+          <View style={styles.cardContainer}>
+            <View style={styles.driverRow}>
+              <Image
+                source={{
+                  uri: driver?.profilePic || ride.driverId?.profilePic || getAvatar(ride?.driverId?.gender),
                 }}
-              >
-                {/* User → Driver Rating */}
-                <View style={{ alignItems: "center" }}>
-                  <Ionicons name="person-circle-outline" size={26} color={color.primaryGray} />
-                  <Text
-                    style={{
-                      fontSize: fontSizes.FONT14,
-                      color: color.primaryText,
-                      fontFamily: "TT-Octosquares-Medium",
-                      marginTop: 5,
-                    }}
-                  >
-                    For You
+                style={styles.driverAvatarLarge}
+              />
+              <View style={styles.driverContent}>
+                <Text style={styles.driverName}>
+                  {driver?.name || ride.driverId?.name || "Driver assigning..."}
+                </Text>
+
+                <View style={styles.ratingPill}>
+                  <MaterialIcons name="star" size={14} color="#FFC107" />
+                  <Text style={styles.ratingText}>
+                    {driver?.rating || ride.driverId?.ratings || "New"}
                   </Text>
-                  <View style={{ flexDirection: "row", marginTop: 5 }}>
-                    {renderStars(ride.userRating || 0)}
-                  </View>
-                </View>
-
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 50,
-                    width: 1,
-                    backgroundColor: color.border,
-                    opacity: 0.6,
-                  }}
-                />
-
-                {/* Driver → User Rating */}
-                <View style={{ alignItems: "center" }}>
-                  <Ionicons name="id-card-outline" size={26} color={color.primaryGray} />
-                  <Text
-                    style={{
-                      fontSize: fontSizes.FONT14,
-                      color: color.primaryText,
-                      fontFamily: "TT-Octosquares-Medium",
-                      marginTop: 5,
-                    }}
-                  >
-                    For Driver
-                  </Text>
-                  <View style={{ flexDirection: "row", marginTop: 5 }}>
-                    {renderStars(ride.driverRating || 0)}
-
-                  </View>
-                </View>
-
-                {/* Divider */}
-                <View
-                  style={{
-                    height: 50,
-                    width: 1,
-                    backgroundColor: color.border,
-                    opacity: 0.6,
-                  }}
-                />
-
-                {/* Overall Ride Rating */}
-                <View style={{ alignItems: "center" }}>
-                  <Ionicons name="podium-outline" size={26} color={color.primaryGray} />
-                  <Text
-                    style={{
-                      fontSize: fontSizes.FONT14,
-                      color: color.primaryText,
-                      fontFamily: "TT-Octosquares-Medium",
-                      marginTop: 5,
-                    }}
-                  >
-                    Ride Avg
-                  </Text>
-                  <View style={{ flexDirection: "row", marginTop: 5 }}>
-                    {renderStars(ride.rating || 0)}
-                  </View>
+                  <Text style={styles.dotSeparator}>•</Text>
+                  <Text style={styles.tripCountText}>{ride?.driverId?.totalRides || 0} Trips</Text>
                 </View>
               </View>
             </View>
-          )}
 
-          {ride.status === "Completed" && !ride.driverRating && (
-            <View style={styles.ratingContainer}>
-              <Text style={styles.ratingTitle}>Rate Your Driver</Text>
-
-              <View style={styles.starContainer}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => !ride.driverRating && setRating(star)} // Disable edit if already rated
-                    disabled={!!ride.driverRating || submitted} // disable if rated or after submission
-                  >
-                    <MaterialIcons
-                      name={
-                        star <= (ride.driverRating || rating)
-                          ? "star"
-                          : "star-border"
-                      }
-                      size={25}
-                      color={star <= (ride.driverRating || rating) ? "#FFD700" : "#B0B0B0"}
-                      style={{ marginHorizontal: 10, marginBottom: 5 }}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {ride.rating || submitted ? (
-                <Text style={styles.thankYouText}>
-                  Thank you for your feedback!
+            <View style={styles.vehicleFooter}>
+              <View style={styles.vehicleInfoItem}>
+                {/* <Ionicons name="car-sport-outline" size={16} color={color.primaryGray} /> */}
+                <Text style={styles.vehicleText}>
+                  {driver?.vehicle_type || ride.driverId?.vehicle_type || "-"}
                 </Text>
-              ) : (
-                <Button
-                  onPress={handleDriverRatings}
-                  style={[styles.actionButton, styles.supportButton]}
-                  title={isSubmitting ? <ActivityIndicator color={color.primary} /> : "Submit Rating"}
-                  disabled={isSubmitting}
-                />
+              </View>
+              <View style={styles.verticalDivider} />
+              <View style={styles.vehicleInfoItem}>
+                <Text style={[styles.vehicleText, { fontFamily: "TT-Octosquares-Medium" }]}>
+                  {driver?.registration_number || ride.driverId?.registration_number || "-"}
+                </Text>
+              </View>
+              <View style={styles.verticalDivider} />
+              <View style={styles.vehicleInfoItem}>
+                {/* <View style={[styles.colorDot, { backgroundColor: (driver?.vehicle_color || ride.driverId?.vehicle_color ||  "gray").toLowerCase() }]} /> */}
+                <Text style={styles.vehicleText}>
+                  {driver?.vehicle_color || ride.driverId?.vehicle_color || "-"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* --- OTP & ARRIVAL HIGHLIGHT --- */}
+          {(ride.status === "Arrived" || ride.status === "Processing" || ride.status === "Ongoing") && (
+            <View style={styles.infoHighlightRow}>
+              {ride.status === "Arrived" && (
+                <View style={styles.otpBox}>
+                  <Text style={styles.otpLabel}>START OTP</Text>
+                  <Text style={styles.otpNumber}>{ride.otp}</Text>
+                </View>
+              )}
+
+              {(ride.status === "Processing" || ride.status === "Ongoing") && (
+                <View style={styles.etaBox}>
+                  <Text style={styles.etaLabel}>{ride.status === "Processing" ? "Driver Arrives in" : "Reach Destination in"}</Text>
+                  <Text style={styles.etaTime}>{arrivalTime}</Text>
+                </View>
               )}
             </View>
           )}
 
+          {/* --- ROUTE TIMELINE --- */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeaderLabel}>ROUTE</Text>
 
-          {/* Action Buttons */}
-          {ride.status !== "Cancelled" ? (
-            <View style={styles.buttonContainer}>
-              {ride.status !== "Completed" ? (
-                <>
-                  {(ride.status === "Booked" ||
-                    ride.status === "Processing" ||
-                    ride.status === "Arrived" ||
-                    ride.status === "Ongoing") && (
+            <View style={styles.timelineContainer}>
+              {/* The Connector Line */}
+              <View style={styles.timelineLine} />
+
+              {/* Pickup */}
+              <View style={styles.timelineItem}>
+                <View style={[styles.timelineDot, styles.dotPickup]} />
+                <View style={styles.timelineContent}>
+                  <Text style={styles.addressLabel}>Pickup</Text>
+                  <Text style={styles.addressValue} numberOfLines={2}>{ride.currentLocationName || "Current Location"}</Text>
+                </View>
+              </View>
+
+              {/* Drop */}
+              <View style={[styles.timelineItem, { marginTop: 24 }]}>
+                <View style={[styles.timelineDot, styles.dotDrop]} />
+                <View style={styles.timelineContent}>
+                  <Text style={styles.addressLabel}>Drop-off</Text>
+                  <Text style={styles.addressValue} numberOfLines={2}>{ride.destinationLocationName || "Destination"}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Remaining Distance (Conditional) */}
+            {ride.status === "Ongoing" && (
+              <View style={styles.miniStatusRow}>
+                <MaterialIcons name="near-me" size={16} color={color.primary} />
+                <Text style={styles.miniStatusText}>{remainingDistance} km remaining</Text>
+              </View>
+            )}
+          </View>
+
+
+          {/* --- FARE BREAKDOWN --- */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.fareTotalRow}>
+              <Text style={styles.fareTotalLabel}>Total Estimate</Text>
+              <Text style={styles.fareTotalValue}>₹{ride.totalFare}</Text>
+            </View>
+          </View>
+
+          {/* --- CANCELLATION INFO (Conditional) --- */}
+          {ride.status === "Cancelled" && ride.cancelDetails && (
+            <View style={[styles.cardContainer, { borderColor: '#ffebee' }]}>
+              <Text style={[styles.sectionHeaderLabel, { color: 'red', marginBottom: 10 }]}>CANCELLATION RECEIPT</Text>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Time</Text>
+                <Text style={styles.detailValue}>{new Date(ride.cancelDetails.cancelledAt).toLocaleTimeString()}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Location</Text>
+                <Text style={styles.detailValue} numberOfLines={1}>{ride.cancelDetails.cancelledLocationName}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Charge</Text>
+                <Text style={[styles.detailValue, { color: 'red' }]}>₹ {ride.cancelDetails.totalFare}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* --- RATINGS SECTION (Conditional) --- */}
+          {/* --- RATINGS SECTION --- */}
+          {ride.status === "Completed" && (
+            <View style={styles.ratingSectionWrapper}>
+
+              {ride.rating ? (
+                /* --- STATE 1: RATING SUMMARY (Completed) --- */
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryTitle}>Ride Scorecard</Text>
+
+                  <View style={styles.statsRow}>
+                    {/* 1. Rating YOU gave the Driver (driverRating) */}
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>
+                        {(ride.driverRating || 0).toFixed(1)}
+                      </Text>
+                      <Text style={styles.statLabel}>You Rated</Text>
+                    </View>
+
+                    <View style={styles.verticalLine} />
+
+                    {/* 2. Rating YOU received from Driver (userRating) */}
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>
+                        {(ride.userRating || 0).toFixed(1)}
+                      </Text>
+                      <Text style={styles.statLabel}>You Received</Text>
+                    </View>
+
+                    <View style={styles.verticalLine} />
+
+                    {/* 3. Overall Trip Rating */}
+                    <View style={styles.statItem}>
+                      <Text style={[styles.statValue, { color: '#FFC107' }]}>
+                        {(ride.rating || 0).toFixed(1)}
+                      </Text>
+                      <Text style={styles.statLabel}>Overall</Text>
+                    </View>
+                  </View>
+                </View>
+
+              ) : (
+                !ride.driverRating && (
+                  /* --- STATE 2: RATING INPUT (Active) --- */
+                  <View style={styles.ratingInputCard}>
+
+                    {/* Context Header */}
+                    <View style={styles.ratingHeader}>
+                      <Image
+                        source={{ uri: driver?.profilePic || ride.driverId?.profilePic || getAvatar(ride?.driverId?.gender) }}
+                        style={styles.ratingAvatar}
+                      />
+                      <View>
+                        <Text style={styles.ratingTitle}>Rate {driver?.name?.split(' ')[0] || "Driver"}</Text>
+                        <Text style={styles.ratingSubtitle}>
+                          {rating > 0 ? ["Terrible", "Bad", "Okay", "Good", "Excellent"][rating - 1] : "How was your trip?"}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Star Interactive Area */}
+                    <View style={styles.starContainerLarge}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <TouchableOpacity
+                          key={star}
+                          onPress={() => setRating(star)}
+                          activeOpacity={0.7}
+                          disabled={submitted}
+                        >
+                          <Animated.View style={{ transform: [{ scale: star === rating ? 1.1 : 1 }] }}>
+                            <MaterialIcons
+                              name={star <= rating ? "star" : "star-border"}
+                              size={38}
+                              color={star <= rating ? "#FFC107" : "#E0E0E0"} // Golden vs Gray
+                              style={{ marginHorizontal: 8 }}
+                            />
+                          </Animated.View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    {/* Submit Button */}
+                    {!submitted && (
                       <TouchableOpacity
-                        onPress={handleCancelRide}
-                        disabled={isCancelling}
+                        onPress={handleDriverRatings}
+                        disabled={isSubmitting || rating === 0}
                         style={[
-                          styles.actionButton,
-                          ride.status === "Ongoing"
-                            ? styles.midwayCancelButton
-                            : styles.cancelButton,
-                          isCancelling && { opacity: 0.6 } // optional visual feedback
+                          styles.submitRatingBtn,
+                          rating === 0 && styles.submitRatingBtnDisabled // Gray out if no stars selected
                         ]}
                       >
-                        {isCancelling ? (
-                          <ActivityIndicator size="small" color="#fff" />
+                        {isSubmitting ? (
+                          <ActivityIndicator color="#fff" size="small" />
                         ) : (
-                          <Text style={styles.actionButtonText}>
-                            {ride.status === "Ongoing" ? "Cancel Midway" : "Cancel Ride"}
-                          </Text>
+                          <Text style={styles.submitRatingText}>Submit Review</Text>
                         )}
                       </TouchableOpacity>
-
                     )}
+                  </View>
+                )
+              )}
+            </View>
+          )}
 
-                  <TouchableOpacity
-                    onPress={handleCall}
-                    style={[styles.actionButton, styles.callButton]}
-                  >
-                    <Text style={styles.actionButtonText}>Call Driver</Text>
+          {/* --- ACTION BUTTONS --- */}
+          {ride.status !== "Cancelled" && (
+            <View style={styles.actionGrid}>
+              {ride.status !== "Completed" ? (
+                <>
+                  {(ride.status === "Booked" || ride.status === "Processing" || ride.status === "Arrived" || ride.status === "Ongoing") && (
+                    <TouchableOpacity
+                      onPress={handleCancelRide}
+                      disabled={isCancelling}
+                      style={[styles.actionBtn, styles.btnOutline]}
+                    >
+                      {isCancelling ? <ActivityIndicator size="small" color={color.primaryText} /> : (
+                        <Text style={styles.btnTextOutline}>{ride.status === "Ongoing" ? "End Trip" : "Cancel"}</Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity onPress={handleCall} style={[styles.actionBtn, styles.btnPrimary]}>
+                    {/* <Ionicons name="call" size={18} color={color.primary} style={{ marginRight: 8 }} /> */}
+                    <Text style={styles.btnTextPrimary}>Call Driver</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => router.push('/(routes)/profile/help-support')}
-                    style={[styles.actionButton, styles.emergencyButton]}
+                    style={[styles.actionBtn, styles.btnDanger]}
                   >
-                    <Text style={styles.actionButtonText}>Emergency</Text>
+                    <MaterialIcons name="sos" size={18} color={color.primaryText} />
                   </TouchableOpacity>
                 </>
               ) : (
-                // ✅ When ride is completed
-                <>
-                  {/* 📞 Contact Support Button */}
-                  <Button
-                    onPress={() => router.push('/(routes)/profile/help-support')}
-                    style={[styles.actionButton, styles.supportButton]}
-                    title={"Contact Support"}
-                  />
-
-                </>
-
+                <TouchableOpacity
+                  onPress={() => router.push('/(routes)/profile/help-support')}
+                  style={[styles.actionBtn, styles.btnOutline, { width: '100%' }]}
+                >
+                  <Text style={styles.btnTextOutline}>Get Help with this Ride</Text>
+                </TouchableOpacity>
               )}
             </View>
-          ) : null}
+          )}
 
-          {/* Footer Note */}
           <Text style={styles.footerNote}>
-            {footerMessages[ride.status] || "Your ride is booked."}
+            {footerMessages[ride.status] || "Safe travels with our secure ride system."}
           </Text>
+
         </ScrollView>
       </View>
 
@@ -1238,3 +1135,573 @@ export default function RideDetailScreen() {
 }
 
 
+
+// --- Design System Constants ---
+const PADDING_HORIZONTAL = windowWidth(24);
+const FONT_REGULAR = "TT-Octosquares-Medium"; // Use a regular font for body text
+const FONT_MEDIUM = "TT-Octosquares-Medium"; // Use a medium font for titles and values
+const COLOR_PRIMARY = "#1976D2"; // Brand Blue - for active elements/call to action
+const COLOR_SECONDARY = "#4CAF50"; // Green - for completed/success
+const COLOR_ACCENT = "#FFC107"; // Yellow/Amber - for rating and high-attention (like OTP)
+const COLOR_DANGER = '#D32F2F'; // Red - for emergency
+const PRIMARY_COLOR = color.buttonBg; // Your main brand color
+const SECONDARY_TEXT = '#5F6368'; // Muted text for labels
+const HEADING_TEXT = '#202124'; // Dark text for titles and values
+const CARD_BG = '#F7F8FA'; // Subtle background for card elements
+const SEPARATOR_COLOR = '#EAEAEA'; // Light divider color
+
+const styles = StyleSheet.create({
+  completedMarker: {
+
+    backgroundColor: color.primary,
+
+    width: 36,
+
+    height: 36,
+
+    borderRadius: 18,
+
+    justifyContent: 'center',
+
+    alignItems: 'center',
+
+    borderWidth: 3,
+
+    borderColor: color.border,
+
+  },
+
+  completedMarkerText: {
+
+    color: color.primaryText,
+
+    fontSize: 20,
+
+    fontFamily: FONT_MEDIUM,
+
+  },
+
+  centered: {
+    flex: 1,
+    justifyContent: "center",  // centers vertically
+    alignItems: "center",       // centers horizontally
+  },
+  loadingText: {
+    color: 'grey',
+    fontSize: 18,
+    fontFamily: FONT_REGULAR,  // 👈 custom font
+    textAlign: "center",
+    letterSpacing: 1,                     // makes it more clean
+  },
+  container: {
+    flex: 1,
+    backgroundColor: color.bgDark,
+  },
+  mapContainer: {
+    // Keep map large and prominent
+    height: windowHeight(450),
+  },
+  map: {
+    flex: 1,
+  },
+  cardWrapper: {
+    flex: 1,
+    marginTop: -40,
+    backgroundColor: color.subPrimary, // Assuming this is white or very light
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 12,
+    paddingHorizontal: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  cardHandle: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 10,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  scrollContent: {
+    paddingBottom: 50,
+  },
+
+  // --- Header ---
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontFamily: 'TT-Octosquares-Medium',
+    fontSize: fontSizes.FONT20,
+    color: color.primaryText,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontFamily: FONT_REGULAR,
+    fontSize: fontSizes.FONT12,
+    color: color.primaryGray,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontFamily: FONT_MEDIUM,
+    fontSize: fontSizes.FONT11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // --- Driver Card (Premium Box) ---
+  cardContainer: {
+    // backgroundColor: '#fff', // Or slightly lighter than background
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 10,
+    // elevation: 3,
+  },
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  driverAvatarLarge: {
+    width: 56,
+    height: 56,
+    borderRadius: 20, // Squircle shape
+    marginRight: 16,
+    backgroundColor: '#f0f0f0',
+  },
+  driverContent: {
+    flex: 1,
+  },
+  driverName: {
+    fontFamily: 'TT-Octosquares-Medium',
+    fontSize: 17,
+    color: color.primaryText,
+    marginBottom: 6,
+  },
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1', // Very light yellow
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  ratingText: {
+    fontFamily: FONT_MEDIUM,
+    fontSize: 12,
+    color: '#FFA000',
+    marginLeft: 4,
+  },
+  dotSeparator: {
+    marginHorizontal: 6,
+    color: '#FFD54F',
+  },
+  tripCountText: {
+    fontFamily: FONT_REGULAR,
+    fontSize: 11,
+    color: '#FFA000',
+  },
+
+  // --- Vehicle Footer inside Card ---
+  vehicleFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F5F5F5',
+  },
+  vehicleInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  vehicleText: {
+    fontFamily: FONT_MEDIUM,
+    fontSize: 13,
+    color: color.primaryText,
+    textTransform: 'capitalize',
+  },
+  verticalDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#E0E0E0',
+  },
+  colorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+
+  // --- OTP & Highlights ---
+  infoHighlightRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  otpBox: {
+    flex: 1,
+    backgroundColor: '#E3F2FD', // Light Blue
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otpLabel: {
+    fontSize: 10,
+    color: color.primary,
+    fontFamily: FONT_MEDIUM,
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  otpNumber: {
+    fontSize: 24,
+    fontFamily: 'TT-Octosquares-Medium',
+    color: color.primary,
+    letterSpacing: 2,
+  },
+  etaBox: {
+    flex: 1.5,
+    backgroundColor: '#E3F2FD', // Light Blue
+    borderColor: color.primaryGray,
+    borderRadius: 16,
+    padding: 16,
+    justifyContent: 'center',
+    borderWidth: 1
+  },
+  etaLabel: {
+    fontSize: 10,
+    color: color.primary,
+    fontFamily: FONT_MEDIUM,
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  etaTime: {
+    fontSize: 16,
+    fontFamily: 'TT-Octosquares-Medium',
+    color: color.primary,
+    letterSpacing: 2,
+  },
+
+  // --- Route Timeline ---
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionHeaderLabel: {
+    fontSize: 11,
+    color: color.primaryGray,
+    fontFamily: FONT_MEDIUM,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 16,
+  },
+  timelineContainer: {
+    position: 'relative',
+    paddingLeft: 10,
+  },
+  timelineLine: {
+    position: 'absolute',
+    left: 17, // Center of dots
+    top: 15,
+    bottom: 25,
+    width: 2,
+    backgroundColor: '#E0E0E0',
+    zIndex: -1,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  timelineDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 3,
+    backgroundColor: '#fff',
+    marginRight: 16,
+    marginTop: 2, // Align with text cap height
+  },
+  dotPickup: {
+    borderColor: color.primary, // Or green
+  },
+  dotDrop: {
+    borderColor: '#F44336', // Or red/destination color
+  },
+  timelineContent: {
+    flex: 1,
+    paddingBottom: 4,
+  },
+  addressLabel: {
+    fontSize: 11,
+    color: color.primaryGray,
+    marginBottom: 2,
+    fontFamily: FONT_REGULAR,
+  },
+  addressValue: {
+    fontSize: 15,
+    color: color.primaryText,
+    fontFamily: FONT_MEDIUM,
+    lineHeight: 20,
+  },
+  miniStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    backgroundColor: '#F0F8FF',
+    padding: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start'
+  },
+  miniStatusText: {
+    marginLeft: 6,
+    fontSize: 12,
+    color: color.primary,
+    fontFamily: FONT_MEDIUM
+  },
+
+  // --- Financials ---
+  fareTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  fareTotalLabel: {
+    fontSize: 16,
+    fontFamily: 'TT-Octosquares-Medium',
+    color: color.primaryText,
+  },
+  fareTotalValue: {
+    fontSize: 20,
+    fontFamily: 'TT-Octosquares-Medium',
+    color: color.primaryText,
+  },
+
+  // --- Cancellation Details ---
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: color.primaryGray,
+    fontFamily: FONT_REGULAR,
+  },
+  detailValue: {
+    fontSize: 13,
+    color: color.primaryText,
+    fontFamily: FONT_MEDIUM,
+    maxWidth: '60%',
+    textAlign: 'right'
+  },
+  // --- Rating Section Wrapper ---
+  ratingSectionWrapper: {
+    marginTop: 10,
+    marginBottom: 24,
+  },
+
+  // --- STATE 1: Summary Card (The Scorecard) ---
+  summaryCard: {
+    // backgroundColor: '#FAFAFA', // Very light gray, distinct from white background
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+  },
+  summaryTitle: {
+    fontFamily: 'TT-Octosquares-Medium',
+    fontSize: 14,
+    color: color.primaryGray,
+    marginBottom: 16,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statIconBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: color.primary, // Brand color
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    shadowColor: color.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  statValue: {
+    fontFamily: 'TT-Octosquares-Medium',
+    fontSize: 18,
+    color: color.primaryText,
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontFamily: FONT_REGULAR,
+    fontSize: 11,
+    color: color.lightGray,
+  },
+  verticalLine: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E0E0E0',
+  },
+  starsRowSmall: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+
+  // --- STATE 2: Input Card (The Interaction) ---
+  ratingInputCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08, // Very soft shadow
+    shadowRadius: 20,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#F5F5F5',
+  },
+  ratingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  ratingAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  ratingTitle: {
+    fontFamily: 'TT-Octosquares-Medium',
+    fontSize: 18,
+    color: color.primary,
+  },
+  ratingSubtitle: {
+    fontFamily: FONT_MEDIUM,
+    fontSize: 13,
+    color: color.primary, // Highlight the feedback text (e.g., "Excellent")
+    marginTop: 2,
+  },
+  starContainerLarge: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA', // Subtle backing for stars
+    borderRadius: 16,
+    paddingVertical: 16,
+    marginBottom: 20,
+  },
+  submitRatingBtn: {
+    backgroundColor: color.bgDark, // Solid black or dark brand color
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: color.primaryText,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitRatingBtnDisabled: {
+    backgroundColor: color.subPrimary, // Solid black or dark brand color
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  submitRatingText: {
+    color: '#fff',
+    fontFamily: 'TT-Octosquares-Medium',
+    fontSize: 15,
+    letterSpacing: 0.5,
+  },
+
+  // --- Action Buttons ---
+  actionGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  actionBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  btnPrimary: {
+    backgroundColor: color.buttonBg, // Or primary color
+    flex: 2, // Take up more space
+  },
+  btnOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  btnDanger: {
+    backgroundColor: '#ef1535ff',
+    width: 48,
+    flex: 0, // Fixed width
+    borderColor: '#ff5c6cff',
+    borderWidth: 1,
+  },
+  btnTextPrimary: {
+    color: color.primary,
+    fontFamily: FONT_MEDIUM,
+    fontSize: 14,
+  },
+  btnTextOutline: {
+    color: color.primaryText,
+    fontFamily: FONT_MEDIUM,
+    fontSize: 13,
+  },
+  footerNote: {
+    fontFamily: FONT_MEDIUM,
+    textAlign: 'center',
+    fontSize: 11,
+    color: color.lightGray,
+    marginTop: 10,
+  },
+});

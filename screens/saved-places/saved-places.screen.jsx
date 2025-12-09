@@ -15,6 +15,7 @@ import {
   Keyboard,
   ScrollView,
   Pressable,
+  StatusBar,
 } from "react-native";
 
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -24,7 +25,7 @@ import color from "@/themes/app.colors";
 import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import Button from "@/components/common/button";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import _ from "lodash";
 import { useGetUserSavedPlaces } from "@/hooks/useGetUserData";
 import { customMapStyle } from "@/utils/map/mapStyle";
@@ -32,6 +33,8 @@ import Images from "@/utils/images";
 import AppAlert from "@/components/modal/alert-modal/alert.modal";
 import { useUserLocationStore } from "@/store/userLocationStore";
 import { Location } from "@/utils/icons";
+import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /* Icon selector */
 const getPlaceIcon = (label = "") => {
@@ -44,16 +47,8 @@ const getPlaceIcon = (label = "") => {
 };
 
 export default function SavedPlaces() {
-  const { loading, savedPlaces, refetchSavedPlaces } =
-    useGetUserSavedPlaces();
-
-  const {
-    userLocation,
-    userLocationName,
-    findingLocation,
-    userPlaceId
-  } = useUserLocationStore();
-
+  const { loading, savedPlaces, refetchSavedPlaces } = useGetUserSavedPlaces();
+  const { userLocation, userLocationName, findingLocation, userPlaceId } = useUserLocationStore();
 
   const [label, setLabel] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,10 +56,8 @@ export default function SavedPlaces() {
   const [autocompleteResults, setAutocompleteResults] = useState([]);
   const [location, setLocation] = useState(null);
   const [placeId, setPlaceId] = useState(null);
-
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-
   const [refreshing, setRefreshing] = useState(false);
 
   const dropdownAnim = useRef(new Animated.Value(0)).current;
@@ -73,12 +66,8 @@ export default function SavedPlaces() {
   /* ⭐ Custom global alert state */
   const [showAlert, setShowAlert] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
-    title: "",
-    message: "",
-    confirmText: "OK",
-    showCancel: false,
-    onConfirm: () => setShowAlert(false),
-    onCancel: () => setShowAlert(false),
+    title: "", message: "", confirmText: "OK", showCancel: false,
+    onConfirm: () => setShowAlert(false), onCancel: () => setShowAlert(false),
   });
 
   const triggerAlert = (config) => {
@@ -95,7 +84,6 @@ export default function SavedPlaces() {
 
   // ---------- Debounced Autocomplete ----------
   const fetchPlaces = async (input) => {
-    console.log(input)
     try {
       const res = await axios.get(
         "https://maps.googleapis.com/maps/api/place/autocomplete/json",
@@ -107,10 +95,8 @@ export default function SavedPlaces() {
           },
         }
       );
-
       const preds = res?.data?.predictions || [];
       setAutocompleteResults(preds);
-
       Animated.timing(dropdownAnim, {
         toValue: preds.length > 0 ? 1 : 0,
         duration: 180,
@@ -134,7 +120,6 @@ export default function SavedPlaces() {
   // ---------- Select Place ----------
   const handleSelectPlace = async (placeId, description) => {
     Keyboard.dismiss();
-
     setSearchQuery(description);
     setSelectedLocation(description)
     setPlaceId(placeId);
@@ -151,20 +136,12 @@ export default function SavedPlaces() {
           },
         }
       );
-
       const loc = res?.data?.result?.geometry?.location;
       if (!loc) return;
-
       const coords = { latitude: loc.lat, longitude: loc.lng };
       setLocation(coords);
-
       mapRef.current?.animateToRegion(
-        {
-          ...coords,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        },
-        400
+        { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 400
       );
     } catch (err) {
       console.warn("Place details error:", err);
@@ -174,30 +151,16 @@ export default function SavedPlaces() {
   // ---------- Save Place ----------
   const handleSavePlace = async () => {
     if (!label.trim() || !searchQuery.trim() || !location) {
-      return triggerAlert({
-        title: "Missing Fields",
-        message: "Please fill all fields correctly.",
-      });
+      return triggerAlert({ title: "Missing Fields", message: "Please fill all fields correctly." });
     }
-
     try {
       setSaving(true);
       const payload = { label: label.trim(), address: searchQuery, location, placeId };
       await axiosInstance.post("/save-place", payload);
-
-      setLabel("");
-      setSearchQuery("");
-      setLocation(null);
-
-      triggerAlert({
-        title: "Success",
-        message: "Your place has been saved successfully.Please Refresh",
-      });
+      setLabel(""); setSearchQuery(""); setLocation(null);
+      triggerAlert({ title: "Success", message: "Your place has been saved successfully. Please Refresh" });
     } catch (err) {
-      triggerAlert({
-        title: "Error",
-        message: "Unable to save place.",
-      });
+      triggerAlert({ title: "Error", message: "Unable to save place." });
     } finally {
       setSaving(false);
     }
@@ -205,15 +168,7 @@ export default function SavedPlaces() {
 
   // ---------- Delete Place ----------
   const handleDelete = (id) => {
-    // 🚫 Prevent deleting another item while one is already deleting
-    if (deletingId !== null) {
-      triggerAlert({
-        title: "Please Wait",
-        message: "Another place is being deleted. Please wait...",
-        confirmText: "OK",
-      });
-      return;
-    }
+    if (deletingId !== null) return;
     triggerAlert({
       title: "Delete",
       message: "Remove this saved place?",
@@ -221,406 +176,271 @@ export default function SavedPlaces() {
       showCancel: true,
       onConfirm: async () => {
         setShowAlert(false);
-        setDeletingId(id);   // 🔥 mark this item as loading
-
+        setDeletingId(id);
         try {
           await axiosInstance.delete(`/save-place/${id}`);
-
-          // Optionally refetch
           refetchSavedPlaces();
-
         } catch (error) {
-          triggerAlert({
-            title: "Error",
-            message: "Could not delete the place.",
-          });
+          triggerAlert({ title: "Error", message: "Could not delete the place." });
         } finally {
-          setDeletingId(null); // reset loading state
+          setDeletingId(null);
         }
       },
     });
   };
 
-
-  // ---------- Refresh ----------
   const onRefresh = async () => {
     setRefreshing(true);
     await refetchSavedPlaces();
     setRefreshing(false);
   };
 
-  const dropdownHeight = dropdownAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 220],
-  });
-
-  /* ------------------ List Card ------------------ */
   const RenderPlaceCard = ({ item }) => (
-    <LinearGradient colors={[color.darkPrimary, color.bgDark]} style={styles.placeCard}>
+    <View style={styles.placeCard}>
       <View style={styles.iconWrap}>
-        <Ionicons name={getPlaceIcon(item.label)} size={20} color={color.primaryText} />
+        <Ionicons name={getPlaceIcon(item.label)} size={22} color={color.primaryGray} />
       </View>
 
       <View style={{ flex: 1 }}>
         <Text style={styles.placeLabel}>{item.label}</Text>
-        <Text numberOfLines={2} style={styles.placeAddr}>{item.address}</Text>
+        <Text numberOfLines={1} style={styles.placeAddr}>{item.address}</Text>
       </View>
 
-      <TouchableOpacity
-        style={{ marginRight: 14 }}
-        onPress={() => {
-          setLocation(item.location);
-          mapRef.current?.animateToRegion(
-            {
-              ...item.location,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            },
-            400
-          );
-        }}
-      >
-        <Ionicons name="navigate-circle-outline" size={26} color={color.primaryText} />
-      </TouchableOpacity>
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => {
+            setLocation(item.location);
+            mapRef.current?.animateToRegion(
+                { ...item.location, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 400
+            );
+            }}
+        >
+            <Ionicons name="navigate-circle-outline" size={24} color="#fff" />
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => handleDelete(item._id)}
-        disabled={deletingId === item._id}   // prevent double press
-        style={{ width: 22, alignItems: "center" }}
-      >
-        {deletingId === item._id ? (
-          <ActivityIndicator size={18} color={color.primaryText} />
-        ) : (
-          <Ionicons name="trash-outline" size={22} color={color.primaryText} />
-        )}
-      </TouchableOpacity>
-
-    </LinearGradient>
+        <TouchableOpacity
+            style={[styles.actionBtn, {backgroundColor:'rgba(255, 82, 82, 0.1)'}]}
+            onPress={() => handleDelete(item._id)}
+            disabled={deletingId === item._id}
+        >
+            {deletingId === item._id ? (
+            <ActivityIndicator size={18} color="#FF5252" />
+            ) : (
+            <Ionicons name="trash-outline" size={20} color="#FF5252" />
+            )}
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 
-  /* ------------------ SHIMMER ------------------ */
+  /* ------------------ SKELETON ------------------ */
   const Shimmer = ({ width, height, radius = 8, style }) => {
     const translateX = useRef(new Animated.Value(-300)).current;
-
     useEffect(() => {
-      Animated.loop(
-        Animated.timing(translateX, {
-          toValue: 300,
-          duration: 1200,
-          useNativeDriver: true,
-        })
-      ).start();
+      Animated.loop(Animated.timing(translateX, { toValue: 300, duration: 1200, useNativeDriver: true })).start();
     }, []);
-
     return (
-      <View
-        style={[
-          {
-            width,
-            height,
-            borderRadius: radius,
-            backgroundColor: "#1d1d1d",
-            overflow: "hidden",
-          },
-          style,
-        ]}
-      >
-        <Animated.View
-          style={{
-            width: "50%",
-            height: "100%",
-            opacity: 0.3,
-            backgroundColor: "#444",
-            transform: [{ translateX }],
-          }}
-        />
+      <View style={[{ width, height, borderRadius: radius, backgroundColor: "rgba(255,255,255,0.05)", overflow: "hidden" }, style]}>
+        <Animated.View style={{ width: "50%", height: "100%", opacity: 0.3, backgroundColor: "#444", transform: [{ translateX }] }} />
       </View>
     );
   };
 
   const SavedPlacesSkeleton = () => (
-    <View style={{ paddingHorizontal: windowWidth(25), paddingTop: 40 }}>
-      <Shimmer width={180} height={26} radius={6} />
-      <Shimmer width={250} height={18} radius={6} style={{ marginTop: 10 }} />
-
-      <LinearGradient
-        colors={[color.darkPrimary, color.bgDark]}
-        style={{ padding: 18, borderRadius: 18, marginTop: 25 }}
-      >
-        <Shimmer width={"100%"} height={48} radius={10} />
-        <Shimmer width={"100%"} height={48} radius={10} style={{ marginTop: 16 }} />
-        <Shimmer width={"100%"} height={46} radius={10} style={{ marginTop: 16 }} />
-      </LinearGradient>
-
-      <Shimmer width={"100%"} height={120} radius={12} style={{ marginTop: 20 }} />
-
-      {[1, 2, 3, 4].map((i) => (
-        <LinearGradient
-          key={i}
-          colors={[color.darkPrimary, color.bgDark]}
-          style={{
-            padding: 16,
-            borderRadius: 14,
-            marginTop: 16,
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <Shimmer width={40} height={40} radius={8} />
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Shimmer width={"60%"} height={16} radius={6} />
-            <Shimmer width={"80%"} height={14} radius={6} style={{ marginTop: 8 }} />
-          </View>
-          <Shimmer width={24} height={24} radius={6} />
-        </LinearGradient>
+    <View style={{ paddingHorizontal: 20, paddingTop: 40 }}>
+      <Shimmer width={150} height={24} radius={6} />
+      <Shimmer width={220} height={16} radius={6} style={{ marginTop: 10, marginBottom: 30 }} />
+      <Shimmer width="100%" height={280} radius={20} style={{ marginBottom: 25 }} />
+      {[1, 2, 3].map((i) => (
+        <Shimmer key={i} width="100%" height={70} radius={16} style={{ marginBottom: 15 }} />
       ))}
     </View>
   );
 
-  if (loading) return <SavedPlacesSkeleton />;
+  if (loading) return (
+    <View style={styles.mainContainer}>
+        <LinearGradient colors={[color.bgDark || "#050505", "#111"]} style={StyleSheet.absoluteFill} />
+        <SavedPlacesSkeleton />
+    </View>
+  );
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <View style={{ paddingHorizontal: windowWidth(25), paddingTop: windowHeight(40) }}>
-        <Text style={styles.headerTitle}>Saved Places</Text>
-        <Text style={styles.headerSub}>Add shortcuts for your favourite locations.</Text>
-      </View>
+    <View style={styles.mainContainer}>
+      <LinearGradient colors={[color.bgDark ,color.subPrimary]} style={StyleSheet.absoluteFill} />
 
-      <ScrollView
-        style={{ paddingHorizontal: windowWidth(25) }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* ---------- FORM ---------- */}
-        <LinearGradient colors={[color.darkPrimary, color.bgDark]} style={styles.formCard}>
-          {/* Label */}
-          <TextInput
-            placeholder="Place Label (Home, Work, Gym...)"
-            placeholderTextColor="#888"
-            value={label}
-            onChangeText={setLabel}
-            style={styles.input}
-          />
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={color.primary} />}>
+            
+            {/* HEADER */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+              <View>
+                <Text style={styles.pageTitle}>Saved Places</Text>
+                <Text style={styles.pageSubtitle}>Manage your favorite locations</Text>
+              </View>
+            </View>
 
-          {/* Search Address */}
-          <View>
-            <TextInput
-              placeholder="Search address…"
-              placeholderTextColor="#888"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={styles.input}
-            />
+            {/* FORM CARD */}
+            <View style={styles.formCard}>
+              <Text style={styles.cardTitle}>Add New Place</Text>
+              
+              <Text style={styles.label}>Label</Text>
+              <TextInput
+                placeholder="e.g. Home, Work, Gym"
+                placeholderTextColor="#666"
+                value={label}
+                onChangeText={setLabel}
+                style={styles.input}
+              />
 
-            {!findingLocation && userLocation && (
-              <Pressable
-                style={{
-                  padding: 5,
-                  borderRadius: 10,
-                  // backgroundColor: color.primaryGray,
-                  marginBottom: 10,
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-                onPress={() => {
-                  if (!userLocation) return;
+              <Text style={styles.label}>Address</Text>
+              <TextInput
+                placeholder="Search address..."
+                placeholderTextColor="#666"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                style={styles.input}
+              />
 
-                  setSearchQuery(userLocationName);
-                  setSelectedLocation(userLocationName);
-                  setLocation(userLocation);
-                  setPlaceId(userPlaceId);
+              {!findingLocation && userLocation && (
+                <TouchableOpacity 
+                    style={styles.currentLocBtn}
+                    onPress={() => {
+                        if (!userLocation) return;
+                        setSearchQuery(userLocationName);
+                        setSelectedLocation(userLocationName);
+                        setLocation(userLocation);
+                        setPlaceId(userPlaceId);
+                        mapRef.current?.animateToRegion({ ...userLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 400);
+                    }}
+                >
+                    <Ionicons name="locate" size={18} color={color.primaryText} />
+                    <Text style={styles.currentLocText}>Use Current Location</Text>
+                </TouchableOpacity>
+              )}
 
-                  mapRef.current?.animateToRegion(
-                    {
-                      ...userLocation,
+              {/* AUTOCOMPLETE DROPDOWN */}
+              {autocompleteResults.length > 0 && (
+                <View style={styles.dropdownContainer}>
+                  {autocompleteResults.map((place) => (
+                    <TouchableOpacity
+                      key={place.place_id}
+                      onPress={() => handleSelectPlace(place.place_id, place.description)}
+                      style={styles.dropRow}
+                    >
+                      <Ionicons name="location-outline" size={16} color="#888" style={{marginTop:2}} />
+                      <Text style={styles.dropText}>{place.description}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* MAP PREVIEW */}
+              {location && (
+                <View style={styles.mapContainer}>
+                  <MapView
+                    ref={mapRef}
+                    style={{ flex: 1 }}
+                    provider={PROVIDER_GOOGLE}
+                    customMapStyle={customMapStyle}
+                    initialRegion={{
+                      latitude: location.latitude,
+                      longitude: location.longitude,
                       latitudeDelta: 0.01,
                       longitudeDelta: 0.01,
-                    },
-                    400
-                  );
-                }}
-              >
-                <Location colors={color.primaryText} />
-                <Text style={{ marginLeft: 10, color: color.primaryText, fontSize: fontSizes.FONT15, fontFamily: "TT-Octosquares-Medium" }}>
-                  Save Current Location
-                </Text>
-              </Pressable>
-
-            )}
-
-            {autocompleteResults.length > 0 && (
-              <Animated.View
-                style={{
-                  opacity: dropdownAnim,
-                  backgroundColor: "#1c1c1c",
-                  marginTop: 6,
-                  borderRadius: 10,
-                  paddingVertical: 6,
-                  elevation: 20,
-                  zIndex: 9999,
-                }}
-              >
-                {autocompleteResults.map((place) => (
-                  <TouchableOpacity
-                    key={place.place_id}
-                    onPress={() =>
-                      handleSelectPlace(place.place_id, place.description)
-                    }
-                    style={styles.dropRow}
+                    }}
                   >
-                    <Text style={styles.dropText}>{place.description}</Text>
-                  </TouchableOpacity>
-                ))}
-              </Animated.View>
-            )}
-          </View>
+                    <Marker coordinate={location}>
+                      <Image source={Images.mapPickupMarker} style={{ width: 36, height: 36, tintColor: color.primaryText }} resizeMode="contain" />
+                    </Marker>
+                  </MapView>
+                </View>
+              )}
 
-          <View style={{ marginTop: 20 }}>
-            <Button
-              title={saving ? <ActivityIndicator color={color.primary} /> : "Save Place"}
-              onPress={handleSavePlace}
-              disabled={saving}
+              <TouchableOpacity 
+                style={styles.saveButton}
+                onPress={handleSavePlace}
+                disabled={saving}
+              >
+                 {saving ? <ActivityIndicator color="#000" /> : <Text style={styles.saveText}>Save Location</Text>}
+              </TouchableOpacity>
+            </View>
+
+            {/* SAVED LIST */}
+            <Text style={styles.sectionTitle}>Your Places</Text>
+            
+            <FlatList
+              data={savedPlaces || []}
+              keyExtractor={(item) => item.id?.toString() || item._id?.toString()}
+              renderItem={({ item }) => <RenderPlaceCard item={item} />}
+              scrollEnabled={false}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                    <MaterialCommunityIcons name="map-marker-off" size={40} color="#333" />
+                    <Text style={styles.emptyText}>No saved places yet.</Text>
+                </View>
+              }
             />
-          </View>
-        </LinearGradient>
 
+          </ScrollView>
+        </KeyboardAvoidingView>
 
-
-
-        {/* ---------- MAP ---------- */}
-        {location && (
-          <View style={styles.mapWrap}>
-            <MapView
-              ref={mapRef}
-              style={{ flex: 1 }}
-              provider={PROVIDER_GOOGLE}
-              customMapStyle={customMapStyle}
-              initialRegion={{
-                latitude: location.latitude,
-                longitude: location.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-            >
-              <Marker coordinate={location}>
-                <Image
-                  source={Images.mapPickupMarker}
-                  style={styles.mapMarker}
-                  resizeMode="contain"
-                />
-              </Marker>
-            </MapView>
-          </View>
-        )}
-
-        {/* ---------- LIST ---------- */}
-        <FlatList
-          data={savedPlaces || []}
-          keyExtractor={(item) => item.id?.toString() || item._id?.toString()}
-          renderItem={({ item }) => <RenderPlaceCard item={item} />}
-          contentContainerStyle={{ paddingBottom: 30, paddingTop: 5 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={
-            <Text style={{ color: "#aaa", textAlign: "center", marginTop: 20, fontFamily: "TT-Octosquares-Medium" }}>
-              No saved places yet.
-            </Text>
-          }
+        <AppAlert
+          visible={showAlert}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          confirmText={alertConfig.confirmText}
+          showCancel={alertConfig.showCancel}
+          onCancel={alertConfig.onCancel}
+          onConfirm={alertConfig.onConfirm}
         />
-      </ScrollView>
-
-      {/* ⭐ Global Reusable Alert */}
-      <AppAlert
-        visible={showAlert}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        confirmText={alertConfig.confirmText}
-        showCancel={alertConfig.showCancel}
-        onCancel={alertConfig.onCancel}
-        onConfirm={alertConfig.onConfirm}
-      />
-    </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
-/* ---------------------------- Styles ---------------------------- */
 const styles = StyleSheet.create({
-  headerTitle: {
-    fontSize: fontSizes.FONT26,
-    color: color.primaryText,
-    fontFamily: "TT-Octosquares-Medium",
-    textAlign: "center",
-  },
-  headerSub: {
-    marginTop: 6,
-    color: color.primaryGray,
-    fontSize: fontSizes.FONT14,
-    textAlign: "center",
-    marginBottom: 25,
-    fontFamily: "TT-Octosquares-Medium",
-  },
-  formCard: {
-    padding: 18,
-    borderRadius: 18,
-    marginBottom: 25,
-  },
-  input: {
-    backgroundColor: "#1d1d1d",
-    padding: 12,
-    borderRadius: 10,
-    color: color.primaryText,
-    marginBottom: 12,
-    fontFamily: "TT-Octosquares-Medium",
-  },
-  dropRow: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  dropText: {
-    color: "white",
-    fontFamily: "TT-Octosquares-Medium",
-  },
-  mapWrap: {
-    height: 200,
-    marginTop: 10,
-    borderRadius: 12,
-    overflow: "hidden",
-    marginBottom: 30,
-  },
-  mapMarker: {
-    width: windowWidth(36),
-    height: 36,
-    tintColor: color.primaryGray,
-  },
-  placeCard: {
-    padding: 14,
-    borderRadius: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  placeLabel: {
-    color: color.primaryText,
-    fontSize: fontSizes.FONT17,
-    fontFamily: "TT-Octosquares-Medium",
-  },
-  placeAddr: {
-    color: "#aaa",
-    fontSize: fontSizes.FONT13,
-    marginTop: 4,
-    fontFamily: "TT-Octosquares-Medium",
-  },
+  mainContainer: { flex: 1, backgroundColor: "#050505" },
+  scrollContent: { padding: 20, paddingBottom: 50 },
+
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 15 },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  pageTitle: { fontSize: 24, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
+  pageSubtitle: { fontSize: 13, color: "#888", fontFamily: "TT-Octosquares-Medium" },
+
+  // Form Card
+  formCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 30 },
+  cardTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 20 },
+  
+  label: { fontSize: 12, color: '#888', marginBottom: 8, marginTop: 10, fontFamily: "TT-Octosquares-Medium" },
+  input: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, fontSize: 15, color: '#fff', fontFamily: "TT-Octosquares-Medium", borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  
+  currentLocBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 10, alignSelf: 'flex-start' },
+  currentLocText: { color: color.primaryText, fontSize: 13, fontFamily: "TT-Octosquares-Medium", marginLeft: 6 },
+
+  dropdownContainer: { backgroundColor: '#1a1a1a', borderRadius: 12, marginTop: 5, padding: 5, zIndex: 10, position: 'absolute', top: 180, left: 20, right: 20, borderWidth: 1, borderColor: '#333' },
+  dropRow: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', gap: 10 },
+  dropText: { color: '#eee', fontSize: 13, fontFamily: "TT-Octosquares-Medium", flex: 1 },
+
+  mapContainer: { height: 180, borderRadius: 16, overflow: 'hidden', marginTop: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  saveButton: { backgroundColor: color.buttonBg, paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginTop: 20 },
+  saveText: { color: '#000', fontSize: 16, fontFamily: "TT-Octosquares-Medium", },
+
+  // List
+  sectionTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 15 },
+  placeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' },
+  iconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
+  placeLabel: { fontSize: 16, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 2 },
+  placeAddr: { fontSize: 12, color: '#888', fontFamily: "TT-Octosquares-Medium", maxWidth: '90%' },
+  
+  actionRow: { flexDirection: 'row', gap: 10, marginLeft: 10 },
+  actionBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+
+  emptyState: { alignItems: 'center', padding: 40 },
+  emptyText: { color: '#444', marginTop: 10, fontFamily: "TT-Octosquares-Medium" },
 });

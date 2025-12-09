@@ -8,13 +8,18 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Linking,
+  StyleSheet,
+  StatusBar,
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 import color from "@/themes/app.colors";
-import { fontSizes, windowWidth, windowHeight } from "@/themes/app.constant";
-import Button from "@/components/common/button";
 import HelpAndSupportSkeleton from "./help-support-skelton.screen";
+import FooterNote from "@/components/common/footer-note";
+import { router } from "expo-router";
+import { fontSizes } from "@/themes/app.constant";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -23,290 +28,277 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function HelpAndSupport() {
   const [expanded, setExpanded] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleExpand = (id) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(expanded === id ? null : id);
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   const faqData = [
     {
       id: 1,
       question: "How can I cancel my ride?",
-      answer:
-        "You can cancel your ride anytime before pickup from the 'Your Rides' section. However, cancelling repeatedly may affect your account reliability score.",
+      answer: "You can cancel your ride anytime before pickup from the 'Your Rides' section. However, cancelling repeatedly may affect your account reliability score.",
+      icon: "close-circle-outline"
     },
     {
       id: 2,
-      question: "My driver is not responding, what should I do?",
-      answer:
-        "If your driver is not responding, wait a few minutes and try calling again using the in-app 'Call Driver' option. If the issue continues, cancel the ride and rebook.",
+      question: "My driver is not responding?",
+      answer: "If your driver is not responding, wait a few minutes and try calling again using the in-app 'Call Driver' option. If the issue continues, cancel the ride and rebook.",
+      icon: "call-outline"
     },
     {
       id: 3,
       question: "How do I rate my driver?",
-      answer:
-        "After each completed ride, you’ll be prompted to rate your driver and share feedback. You can also view and edit your rating in your ride history.",
+      answer: "After each completed ride, you’ll be prompted to rate your driver and share feedback. You can also view and edit your rating in your ride history.",
+      icon: "star-outline"
     },
     {
       id: 4,
-      question: "Can I change my pickup location after booking?",
-      answer:
-        "Once a driver is assigned, pickup changes are limited. You can cancel and rebook if your new pickup location is significantly different.",
+      question: "Change pickup location?",
+      answer: "Once a driver is assigned, pickup changes are limited. You can cancel and rebook if your new pickup location is significantly different.",
+      icon: "location-outline"
     },
     {
       id: 5,
-      question: "My driver asked for extra money. What can I do?",
-      answer:
-        "Please do not pay any amount beyond the displayed fare. Report such incidents immediately through the 'Register Complaint' section under 'Driver Behavior'.",
+      question: "Driver asked for extra money?",
+      answer: "Please do not pay any amount beyond the displayed fare. Report such incidents immediately through the 'Register Complaint' section under 'Driver Behavior'.",
+      icon: "cash-outline"
     },
     {
       id: 6,
-      question: "How do I update my profile information?",
-      answer:
-        "Go to your 'Profile' section, select 'Profile Information', and edit your details such as name, phone number, or email. Make sure to save the changes before exiting.",
+      question: "Update profile information?",
+      answer: "Go to your 'Profile' section, select 'Profile Information', and edit your details such as name, phone number, or email.",
+      icon: "person-outline"
     },
     {
       id: 7,
-      question: "What safety measures are in place for users?",
-      answer:
-        "All our drivers are verified with proper background checks and documentation. You can also share your live trip status with friends or family anytime during a ride.",
+      question: "Safety measures for users?",
+      answer: "All our drivers are verified with proper background checks. You can also share your live trip status with friends or family anytime.",
+      icon: "shield-checkmark-outline"
     },
     {
       id: 8,
-      question: "I left my item in the cab, what should I do?",
-      answer:
-        "If you’ve left an item in the cab, please register a complaint through the 'Complaints' section with your ride details. Our support team will contact the driver and help recover your belongings as soon as possible.",
+      question: "Lost item in the cab?",
+      answer: "If you’ve left an item, register a complaint through the 'Complaints' section. Our support team will contact the driver to help recover your belongings.",
+      icon: "briefcase-outline"
     },
   ];
 
-  const [loading, setLoading] = useState(true);
+  // Filter FAQs based on search
+  const filteredFaq = faqData.filter(item =>
+    item.question.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  useEffect(() => {
-    // simulate data fetch or load delay
-    const timer = setTimeout(() => setLoading(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+  const handleCallSupport = () => Linking.openURL("tel:04772233377");
+  const handleEmailSupport = () => Linking.openURL("mailto:starkopc@gmail.com");
 
   if (loading) return <HelpAndSupportSkeleton />;
 
   return (
-    <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: color.background,
-        paddingHorizontal: windowWidth(25),
-        paddingTop: windowHeight(40),
-        marginBottom: 30,
-      }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* ---------- HEADER ---------- */}
-      <Text
-        style={{
-          fontSize: fontSizes.FONT26,
-          fontFamily: "TT-Octosquares-Medium",
-          color: color.primaryText,
-          textAlign: "center",
-          marginBottom: 8,
-        }}
-      >
-        Help & Support
-      </Text>
-      <Text
-        style={{
-          fontSize: fontSizes.FONT14,
-          color: color.primaryGray,
-          textAlign: "center",
-          fontFamily: "TT-Octosquares-Medium",
-          marginBottom: 25,
-        }}
-      >
-        Find answers to common questions or reach out to our team for assistance.
-      </Text>
+    <View style={styles.mainContainer}>
+      <LinearGradient colors={[color.bgDark, color.subPrimary]} style={StyleSheet.absoluteFill} />
 
-      {/* ---------- SEARCH BOX ---------- */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: color.subPrimary,
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          marginBottom: 25,
-          borderWidth: 1,
-          borderColor: color.border,
-        }}
-      >
-        <Ionicons name="search-outline" size={20} color={color.primaryText} />
-        <TextInput
-          placeholder="Search for help..."
-          placeholderTextColor="#888"
-          style={{
-            flex: 1,
-            paddingHorizontal: 10,
-            fontFamily: "TT-Octosquares-Medium",
-            color: color.primaryText,
-          }}
-        />
-      </View>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-      {/* ---------- FAQ SECTION ---------- */}
-      <Text
-        style={{
-          fontSize: fontSizes.FONT22,
-          color: color.primaryText,
-          fontFamily: "TT-Octosquares-Medium",
-          marginBottom: 15,
-        }}
-      >
-        Quick Help
-      </Text>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View>
+              <Text style={styles.pageTitle}>Help Center</Text>
+              <Text style={styles.pageSubtitle}>Support & FAQs</Text>
+            </View>
+          </View>
 
-      {faqData.map((faq) => (
-        <TouchableOpacity
-          key={faq.id}
-          onPress={() => toggleExpand(faq.id)}
-          activeOpacity={0.8}
-          style={{
-            backgroundColor: color.subPrimary,
-            borderRadius: 12,
-            marginBottom: 12,
-            paddingHorizontal: 15,
-            paddingVertical: 14,
-            borderWidth: 1,
-            borderColor: color.border,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: fontSizes.FONT16,
-                color: color.primaryText,
-                fontFamily: "TT-Octosquares-Medium",
-                flex: 1,
-                marginRight: 10,
-              }}
-            >
-              {faq.question}
-            </Text>
-            <Ionicons
-              name={expanded === faq.id ? "chevron-up" : "chevron-down"}
-              size={20}
-              color={color.primaryText}
+          {/* SEARCH BAR */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#666" />
+            <TextInput
+              placeholder="Search for solutions..."
+              placeholderTextColor="#666"
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
           </View>
 
-          {expanded === faq.id && (
-            <Text
-              style={{
-                fontSize: fontSizes.FONT14,
-                color: "#aaa",
-                marginTop: 10,
-                lineHeight: 22,
-                fontFamily: "TT-Octosquares-Medium",
-              }}
-            >
-              {faq.answer}
-            </Text>
+          {/* QUICK ACTIONS CARD */}
+          <LinearGradient
+            colors={['#1F222B', '#15171E']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={styles.contactCard}
+          >
+            <Text style={styles.contactTitle}>Need Personal Assistance?</Text>
+            <Text style={styles.contactSubtitle}>Our support team is available 24/7</Text>
+
+            <View style={styles.contactRow}>
+              <TouchableOpacity style={styles.contactButton} onPress={handleCallSupport}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(0, 230, 118, 0.1)' }]}>
+                  <Ionicons name="call" size={22} color="#00E676" />
+                </View>
+                <View>
+                  <Text style={styles.buttonLabel}>Call Us</Text>
+                  <Text style={styles.buttonSub}>0477-2233377</Text>
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.verticalDivider} />
+
+              <TouchableOpacity style={styles.contactButton} onPress={handleEmailSupport}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(41, 182, 246, 0.1)' }]}>
+                  <Ionicons name="mail" size={22} color="#29B6F6" />
+                </View>
+                <View>
+                  <Text style={styles.buttonLabel}>Email Us</Text>
+                  <Text style={styles.buttonSub}>starkopc@...</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+
+          {/* FAQ SECTION */}
+          <Text style={styles.sectionTitle}>Common Questions</Text>
+
+          {filteredFaq.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No results found</Text>
+            </View>
+          ) : (
+            filteredFaq.map((faq) => (
+              <TouchableOpacity
+                key={faq.id}
+                onPress={() => toggleExpand(faq.id)}
+                activeOpacity={0.9}
+                style={[styles.faqItem, expanded === faq.id && styles.faqItemActive]}
+              >
+                <View style={styles.questionRow}>
+                  <View style={styles.faqIconBox}>
+                    <Ionicons name={faq.icon} size={18} color={expanded === faq.id ? color.primaryGray : "#888"} />
+                  </View>
+                  <Text style={[styles.questionText, expanded === faq.id && { color: color.primaryGray }]}>
+                    {faq.question}
+                  </Text>
+                  <Ionicons
+                    name={expanded === faq.id ? "remove" : "add"}
+                    size={20}
+                    color={expanded === faq.id ? color.primaryGray : "#666"}
+                  />
+                </View>
+
+                {expanded === faq.id && (
+                  <View style={styles.answerContainer}>
+                    <Text style={styles.answerText}>{faq.answer}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))
           )}
-        </TouchableOpacity>
-      ))}
 
-      {/* ---------- CONTACT SECTION ---------- */}
-      <LinearGradient
-        colors={[color.darkPrimary, color.bgDark]}
-        style={{
-          borderRadius: 18,
-          padding: 18,
-          marginTop: 25,
-          marginBottom: 30,
-        }}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Text
-          style={{
-            fontSize: fontSizes.FONT20,
-            color: color.primaryText,
-            fontFamily: "TT-Octosquares-Medium",
-            marginBottom: 12,
-          }}
-        >
-          Still Need Help?
-        </Text>
-
-        <View style={{ marginBottom: 10 }}>
-          <View
-            style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
-          >
-            <MaterialIcons name="email" size={20} color={color.primaryText} />
-            <Text
-              style={{
-                color: color.primaryText,
-                marginLeft: 10,
-                fontFamily: "TT-Octosquares-Medium",
-              }}
-            >
-              support@starkapp.com
-            </Text>
+          {/* FOOTER */}
+          <View style={{ marginTop: 30 }}>
+            <FooterNote />
           </View>
 
-          <View
-            style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
-          >
-            <MaterialIcons name="phone" size={20} color={color.primaryText} />
-            <Text
-              style={{
-                color: color.primaryText,
-                marginLeft: 10,
-                fontFamily: "TT-Octosquares-Medium",
-              }}
-            >
-              +91 98765 43210
-            </Text>
-          </View>
-
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="time-outline" size={20} color={color.primaryText} />
-            <Text
-              style={{
-                color: color.primaryText,
-                marginLeft: 10,
-                fontFamily: "TT-Octosquares-Medium",
-              }}
-            >
-              Support Hours: 9 AM – 9 PM (Mon–Sat)
-            </Text>
-          </View>
-        </View>
-
-        <Button
-          title="Contact Support"
-          onPress={() => { }}
-          style={{ marginTop: 10 }}
-        />
-      </LinearGradient>
-
-      {/* ---------- FOOTER NOTE ---------- */}
-      <Text
-        style={{
-          fontSize: fontSizes.FONT14,
-          color: "#888",
-          textAlign: "center",
-          fontFamily: "TT-Octosquares-Medium",
-          marginBottom: 30,
-        }}
-      >
-        © {new Date().getFullYear()} Stark OPC Pvt. Ltd. All rights reserved.
-      </Text>
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  mainContainer: { flex: 1, backgroundColor: "#050505" },
+  scrollContent: { padding: 20, paddingBottom: 50 },
+
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 15 },
+  backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  pageTitle: { fontSize: 24, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
+  pageSubtitle: { fontSize: 13, color: "#888", fontFamily: "TT-Octosquares-Medium" },
+
+  // Search
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 50,
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)'
+  },
+  searchInput: { flex: 1, marginLeft: 10, color: '#fff', fontFamily: "TT-Octosquares-Medium" },
+
+  // Contact Card
+  contactCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  contactTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 4 },
+  contactSubtitle: { fontSize: 12, color: '#888', marginBottom: 20, fontFamily: "TT-Octosquares-Medium" },
+  contactRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  contactButton: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 },
+  iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  buttonLabel: { color: '#fff', fontFamily: "TT-Octosquares-Medium", fontSize: 13 },
+  buttonSub: { color: '#666', fontSize: fontSizes.FONT12, fontFamily: "TT-Octosquares-Medium" },
+  verticalDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginHorizontal: 10 },
+
+  // FAQ
+  sectionTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 15 },
+  faqItem: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.03)',
+    overflow: 'hidden'
+  },
+  faqItemActive: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  questionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    justifyContent: 'space-between',
+    gap: 12
+  },
+  faqIconBox: {
+    width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center'
+  },
+  questionText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#eee',
+    fontFamily: "TT-Octosquares-Medium",
+    lineHeight: 20,
+  },
+  answerContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingLeft: 60, // align with text
+  },
+  answerText: {
+    color: '#aaa',
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: "TT-Octosquares-Medium",
+  },
+
+  emptyState: { padding: 20, alignItems: 'center' },
+  emptyText: { color: '#666', fontFamily: "TT-Octosquares-Medium" }
+});

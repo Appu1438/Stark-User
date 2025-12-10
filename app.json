@@ -8,13 +8,6 @@
     "userInterfaceStyle": "light",
     "plugins": [
       [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/logo/IconOnly.png",
-          "color": "#00000"
-        }
-      ],
-      [
         "expo-splash-screen",
         {
           "backgroundColor": "#000000",

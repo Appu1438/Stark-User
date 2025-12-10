@@ -72,7 +72,7 @@ export const CAB_TYPES = [
     name: "Stark Mini",
     quote: "Your quick, affordable way around the city.",
     detailedQuote:
-      "“Stark Go is designed for fast, flexible, and budget-friendly travel. Perfect for short rides, market runs, and beating city traffic, it offers the quickest way to get wherever you're going. Enjoy convenience, efficiency, and a breezy ride — ideal for everyday mobility.”",
+      "“Stark Mini is designed for fast, flexible, and budget-friendly travel. Perfect for short rides, market runs, and beating city traffic, it offers the quickest way to get wherever you're going. Enjoy convenience, efficiency, and a breezy ride — ideal for everyday mobility.”",
     image: require("@/assets/images/featuring/stark-mini.png"), // <-- Add your auto image here
   },
   {

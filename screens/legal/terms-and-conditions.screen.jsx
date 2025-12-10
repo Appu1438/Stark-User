@@ -36,62 +36,68 @@ export default function TermsConditions() {
 
             <Section
               title="2. User Eligibility"
-              content={`By registering and using our platform, you confirm that the information you provide is genuine, accurate, and up to date. Each user is responsible for maintaining the confidentiality of their account details and ensuring that their account is used only for lawful and intended purposes.`}
+              content={`By registering and using our platform, you confirm that the information you provide is genuine, accurate, and up to date. Users are responsible for maintaining the confidentiality of their account and ensuring the platform is used only for lawful and intended purposes.`}
             />
 
             <Section
               title="3. Use of the Service"
-              content={`The App connects riders with nearby drivers for transportation services. The Company acts solely as a platform facilitator and does not directly provide transportation services. Drivers are independent contractors responsible for complying with local traffic and safety laws.`}
+              content={`The App connects riders with nearby drivers for transportation services. The Company acts solely as a facilitator and does not directly provide transportation. Drivers are independent contractors responsible for complying with all legal, traffic, and safety requirements.`}
             />
 
             <Section
               title="4. Booking & Cancellation"
-              content={`You can request rides via the App by providing pickup and drop-off details. Once a booking is confirmed, cancellation policies apply. Frequent cancellations or misuse may lead to temporary or permanent suspension of your account.`}
+              content={`Users can request rides via the App by providing pickup and drop-off details. Once a ride is confirmed, cancellation policies apply. Frequent cancellations, misuse, or fraudulent booking activity may lead to account restrictions or suspension.`}
             />
 
             <Section
               title="5. Payments"
-              content={`All ride payments must be made through the App using available payment options. Prices are determined based on distance, time, and dynamic factors like demand. Any surge pricing or additional fees will be clearly displayed before confirming the ride.`}
+              content={`Ride fares are calculated based on distance, time, demand, and other operational factors. All applicable charges will be displayed before confirming the ride. Users are required to pay the full fare using available payment options inside the App.`}
+            />
+
+            {/* ✅ NEW SECTION: Charges Explanation */}
+            <Section
+              title="6. Additional Charges (Tolls, Parking & Waiting Time)"
+              content={`• Tolls, parking fees, interstate permits, and government-imposed charges are not included in the estimated fare shown in the App.\n• These charges are applicable as per actuals and must be paid by the user directly to the driver.\n• For round trips or situations where the driver must wait at the pickup or destination, waiting charges may apply.\n• Any waiting fee is calculated based on the total waiting duration and may vary depending on ride type and location.\n• These charges will be clearly communicated by the driver when applicable and must be settled at the end of the trip.`}
             />
 
             <Section
-              title="6. User Responsibilities"
-              content={`Users must:\n• Treat drivers with respect and maintain proper conduct.\n• Avoid damage to vehicles or misusing the service.\n• Not use the platform for unlawful activities.\nFailure to follow these may lead to account suspension or permanent deactivation.`}
+              title="7. User Responsibilities"
+              content={`Users must:\n• Treat drivers respectfully and maintain courteous behavior.\n• Avoid damaging the vehicle or causing disturbances.\n• Not use the platform for unlawful or harmful activities.\nNon-compliance may lead to temporary or permanent account suspension.`}
             />
 
             <Section
-              title="7. Safety & Conduct"
-              content={`Your safety is our top priority. Drivers undergo verification and training as per company standards. Users are encouraged to share ride details with trusted contacts via in-app features. Any unsafe or inappropriate behavior should be reported immediately through the support section of the App.`}
+              title="8. Safety & Conduct"
+              content={`Your safety is our priority. Drivers undergo verification as per company standards. Users are encouraged to share ride details with trusted contacts. Any unsafe or inappropriate behavior should be reported immediately via the in-app support system.`}
             />
 
             <Section
-              title="8. Ratings & Feedback"
-              content={`After each ride, users and drivers can rate each other. Ratings help maintain quality standards. Any misuse of the rating system or false feedback may result in account review.`}
+              title="9. Ratings & Feedback"
+              content={`After each ride, users and drivers can rate each other. Ratings help maintain service quality. Providing false, harmful, or misleading feedback may result in account review or restrictions.`}
             />
 
             <Section
-              title="9. Privacy & Data Protection"
-              content={`We value your privacy. Personal data such as name, phone number, and location are collected only to improve service quality. Data is stored securely and not shared with third parties except where legally required or essential for operations. For details, please review our Privacy Policy.`}
+              title="10. Privacy & Data Protection"
+              content={`We collect and store only essential personal information required for delivering the service. Your data will not be shared with third parties except as legally required or necessary for platform operations. Refer to our Privacy Policy for more details.`}
             />
 
             <Section
-              title="10. Limitation of Liability"
-              content={`While we strive to provide safe and reliable rides, the Company is not liable for delays, losses, accidents, or damages arising from driver behavior, traffic conditions, or other external factors. The Company’s liability is limited to the maximum extent permitted by applicable law.`}
+              title="11. Limitation of Liability"
+              content={`While we strive to ensure safe and reliable rides, the Company is not liable for delays, damages, losses, or incidents arising from driver actions, traffic conditions, accidents, or unforeseen circumstances.`}
             />
 
             <Section
-              title="11. Suspension & Termination"
-              content={`We reserve the right to suspend or terminate accounts found violating these terms or engaging in fraudulent or abusive behavior. Users may request account deletion at any time through the App’s settings or by contacting support.`}
+              title="12. Suspension & Termination"
+              content={`We may suspend or terminate accounts violating these terms, engaging in fraudulent activity, or misusing the platform. Users may request account deletion through the App settings or by contacting support.`}
             />
 
             <Section
-              title="12. Amendments"
-              content={`The Company may update these Terms & Conditions periodically. Continued use of the App after updates constitutes your acceptance of the revised terms.`}
+              title="13. Amendments"
+              content={`The Company may update these Terms & Conditions periodically. Continued use of the App constitutes acceptance of the latest version.`}
             />
 
             <Section
-              title="13. Contact Information"
-              content={`For questions, feedback, or complaints, please reach out to our support team at:\n“Help & Support” section in the App.`}
+              title="14. Contact Information"
+              content={`For questions, feedback, or complaints, please reach out via the “Help & Support” section within the App.`}
             />
           </View>
 
@@ -146,3 +152,4 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 });
+

@@ -402,8 +402,9 @@ export default function RideOptions({
                       </Text>
                     </View>
                     <Text style={[styles.detailListItem, { color: '#ccc', fontSize: fontSizes.FONT13, lineHeight: 20, marginTop: 4 }]}>
-                      Tolls, parking fees, and interstate permits are extra and applicable over the fare.
+                      Tolls, parking fees, interstate permits, and waiting charges (if applicable) are extra over the fare.
                     </Text>
+
                   </View>
                 </View>
               </Animated.ScrollView>

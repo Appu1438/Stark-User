@@ -48,7 +48,6 @@ export default {
 
     ios: {
       supportsTablet: true,
-      icon: "...",
       bundleIdentifier: "com.adithyanskumar.stark",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,

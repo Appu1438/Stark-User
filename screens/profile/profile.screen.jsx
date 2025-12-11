@@ -22,6 +22,7 @@ import AppAlert from "@/components/modal/alert-modal/alert.modal";
 import FooterNote from "@/components/common/footer-note";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
+import { fontSizes } from "@/themes/app.constant";
 
 export default function Profile() {
   const { user, loading, refetchData } = useGetUserData();
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
   versionText: {
     textAlign: 'center',
     color: '#444',
-    fontSize: 11,
+    fontSize:  fontSizes.FONT12,
     marginTop: 20,
     fontFamily: 'TT-Octosquares-Medium',
   },
@@ -307,13 +308,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 22,
+    fontSize: fontSizes.FONT20,
     color: '#fff',
     fontFamily: 'TT-Octosquares-Medium',
     letterSpacing: 0.5,
   },
   profileEmail: {
-    fontSize: 12,
+    fontSize: fontSizes.FONT14,
     color: '#888',
     fontFamily: 'TT-Octosquares-Medium',
     marginTop: 2,
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   proTagText: {
-    fontSize: 10,
+    fontSize: fontSizes.FONT12,
     color: '#FFD700',
     fontFamily: 'TT-Octosquares-Medium',
   },
@@ -360,12 +361,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: '#fff',
-    fontSize: 16,
+    fontSize:  fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
   },
   statLabel: {
     color: '#666',
-    fontSize: 11,
+    fontSize:  fontSizes.FONT11,
     marginTop: 2,
     fontFamily: 'TT-Octosquares-Medium',
 
@@ -403,13 +404,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   activityValue: {
-    fontSize: 18,
+    fontSize:  fontSizes.FONT18,
     color: '#fff',
     fontFamily: 'TT-Octosquares-Medium',
     lineHeight: 22,
   },
   activityLabel: {
-    fontSize: 11,
+    fontSize:  fontSizes.FONT12,
     color: '#888', // Muted text for labels
     fontFamily: 'TT-Octosquares-Medium',
   },
@@ -428,7 +429,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#666',
-    fontSize: 13,
+    fontSize:  fontSizes.FONT13,
     fontFamily: 'TT-Octosquares-Medium',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   },
   menuText: {
     color: '#eee',
-    fontSize: 15,
+    fontSize:  fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
   },
   menuItemRight: {
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#FF3B30',
-    fontSize: 16,
+    fontSize:  fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
   },
 });

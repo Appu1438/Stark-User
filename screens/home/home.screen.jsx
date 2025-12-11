@@ -581,6 +581,7 @@ export default function Home() {
                   color: color.secondaryFont,
                   textAlign: "center",
                   marginVertical: 10,
+                  fontSize: fontSizes.FONT16
                 }}
               >
                 No rides yet! Start your journey today.

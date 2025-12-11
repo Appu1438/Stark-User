@@ -687,8 +687,8 @@ export default function RideDetailScreen() {
                 <Image
                   source={driverIcon}
                   style={{
-                    width: windowWidth(35),
-                    height: windowHeight(35),
+                    width: windowWidth(30),
+                    height: windowHeight(30),
                     resizeMode: "contain",
                     transform: [
                       {
@@ -815,7 +815,7 @@ export default function RideDetailScreen() {
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.headerTitle}>Ride Details</Text>
-              <Text style={styles.headerSubtitle}>{ride?.distance} Km • Trip ID : {ride?.id?.slice(-6)}</Text>
+              <Text style={styles.headerSubtitle}>{ride?.distance} Km • Trip ID : {ride?.id?.slice(-6).toUpperCase()}</Text>
             </View>
 
             <View style={[styles.statusBadge, { backgroundColor: statusBadgeStyle.backgroundColor }]}>
@@ -1175,7 +1175,7 @@ const styles = StyleSheet.create({
 
     color: color.primaryText,
 
-    fontSize: 20,
+    fontSize:  fontSizes.FONT20,
 
     fontFamily: FONT_MEDIUM,
 
@@ -1188,7 +1188,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: 'grey',
-    fontSize: 18,
+    fontSize:  fontSizes.FONT18,
     fontFamily: FONT_REGULAR,  // 👈 custom font
     textAlign: "center",
     letterSpacing: 1,                     // makes it more clean
@@ -1211,7 +1211,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingTop: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.08,
@@ -1244,7 +1244,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontFamily: FONT_REGULAR,
+    fontFamily: FONT_MEDIUM,
     fontSize: fontSizes.FONT12,
     color: color.primaryGray,
   },
@@ -1291,7 +1291,7 @@ const styles = StyleSheet.create({
   },
   driverName: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize: 17,
+    fontSize:  fontSizes.FONT16,
     color: color.primaryText,
     marginBottom: 6,
   },
@@ -1306,7 +1306,7 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontFamily: FONT_MEDIUM,
-    fontSize: 12,
+    fontSize:  fontSizes.FONT12,
     color: '#FFA000',
     marginLeft: 4,
   },
@@ -1316,7 +1316,7 @@ const styles = StyleSheet.create({
   },
   tripCountText: {
     fontFamily: FONT_REGULAR,
-    fontSize: 11,
+    fontSize:  fontSizes.FONT12,
     color: '#FFA000',
   },
 
@@ -1336,7 +1336,7 @@ const styles = StyleSheet.create({
   },
   vehicleText: {
     fontFamily: FONT_MEDIUM,
-    fontSize: 13,
+    fontSize:  fontSizes.FONT14,
     color: color.primaryText,
     textTransform: 'capitalize',
   },
@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   otpLabel: {
-    fontSize: 10,
+    fontSize:  fontSizes.FONT12,
     color: color.primary,
     fontFamily: FONT_MEDIUM,
     letterSpacing: 1,
@@ -1390,14 +1390,14 @@ const styles = StyleSheet.create({
     borderWidth: 1
   },
   etaLabel: {
-    fontSize: 10,
+    fontSize:  fontSizes.FONT12,
     color: color.primary,
     fontFamily: FONT_MEDIUM,
     letterSpacing: 1,
     marginBottom: 4,
   },
   etaTime: {
-    fontSize: 16,
+    fontSize:  fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
     color: color.primary,
     letterSpacing: 2,
@@ -1408,7 +1408,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionHeaderLabel: {
-    fontSize: 11,
+    fontSize:  fontSizes.FONT12,
     color: color.primaryGray,
     fontFamily: FONT_MEDIUM,
     letterSpacing: 1,
@@ -1452,13 +1452,13 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   addressLabel: {
-    fontSize: 11,
+    fontSize:  fontSizes.FONT12,
     color: color.primaryGray,
     marginBottom: 2,
     fontFamily: FONT_REGULAR,
   },
   addressValue: {
-    fontSize: 15,
+    fontSize:  fontSizes.FONT14,
     color: color.primaryText,
     fontFamily: FONT_MEDIUM,
     lineHeight: 20,
@@ -1489,12 +1489,12 @@ const styles = StyleSheet.create({
     borderTopColor: '#F0F0F0',
   },
   fareTotalLabel: {
-    fontSize: 16,
+    fontSize:  fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
     color: color.primaryText,
   },
   fareTotalValue: {
-    fontSize: 20,
+    fontSize:  fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
     color: color.primaryText,
   },
@@ -1506,12 +1506,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   detailLabel: {
-    fontSize: 13,
+    fontSize:  fontSizes.FONT14,
     color: color.primaryGray,
     fontFamily: FONT_REGULAR,
   },
   detailValue: {
-    fontSize: 13,
+    fontSize:  fontSizes.FONT14,
     color: color.primaryText,
     fontFamily: FONT_MEDIUM,
     maxWidth: '60%',
@@ -1533,7 +1533,7 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize: 14,
+    fontSize:  fontSizes.FONT16,
     color: color.primaryGray,
     marginBottom: 16,
     textAlign: 'center',
@@ -1565,13 +1565,13 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize: 18,
+    fontSize:  fontSizes.FONT18,
     color: color.primaryText,
     marginBottom: 2,
   },
   statLabel: {
     fontFamily: FONT_REGULAR,
-    fontSize: 11,
+    fontSize:  fontSizes.FONT12,
     color: color.lightGray,
   },
   verticalLine: {
@@ -1616,12 +1616,12 @@ const styles = StyleSheet.create({
   },
   ratingTitle: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize: 18,
+    fontSize:  fontSizes.FONT18,
     color: color.primary,
   },
   ratingSubtitle: {
     fontFamily: FONT_MEDIUM,
-    fontSize: 13,
+    fontSize:  fontSizes.FONT14,
     color: color.primary, // Highlight the feedback text (e.g., "Excellent")
     marginTop: 2,
   },
@@ -1653,7 +1653,7 @@ const styles = StyleSheet.create({
   submitRatingText: {
     color: '#fff',
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize: 15,
+    fontSize:  fontSizes.FONT16,
     letterSpacing: 0.5,
   },
 
@@ -1690,17 +1690,17 @@ const styles = StyleSheet.create({
   btnTextPrimary: {
     color: color.primary,
     fontFamily: FONT_MEDIUM,
-    fontSize: 14,
+    fontSize:  fontSizes.FONT14,
   },
   btnTextOutline: {
     color: color.primaryText,
     fontFamily: FONT_MEDIUM,
-    fontSize: 13,
+    fontSize:  fontSizes.FONT14,
   },
   footerNote: {
     fontFamily: FONT_MEDIUM,
     textAlign: 'center',
-    fontSize: 11,
+    fontSize:  fontSizes.FONT12,
     color: color.lightGray,
     marginTop: 10,
   },

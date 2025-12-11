@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
   // Header
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30, gap: 15 },
   backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  pageTitle: { fontSize: 24, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
-  pageSubtitle: { fontSize: 13, color: "#888", fontFamily: "TT-Octosquares-Medium" },
+  pageTitle: { fontSize:  fontSizes.FONT20, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
+  pageSubtitle: { fontSize:  fontSizes.FONT16, color: "#888", fontFamily: "TT-Octosquares-Medium" },
 
   // List Card
   listCard: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center'
   },
   itemText: {
-    fontSize: 16,
+    fontSize:  fontSizes.FONT18,
     color: '#eee',
     fontFamily: "TT-Octosquares-Medium",
   },

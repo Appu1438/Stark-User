@@ -18,6 +18,7 @@ import Animated, {
   SlideInDown,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons"; // Standard Expo Icon Library
+import { fontSizes } from "@/themes/app.constant";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontFamily: "TT-Octosquares-Medium",
-    fontSize: 34,
+    fontSize: 30,
     color: color.primaryText || "#FFF",
     marginBottom: 16,
     letterSpacing: 0.5,
@@ -187,9 +188,9 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     fontFamily: "TT-Octosquares-Medium",
-    fontSize: 16,
+    fontSize: fontSizes.FONT18,
     color: color.secondaryFont || "#AAA",
-    lineHeight: 28, // Increased line height for elegance
+    lineHeight: 25, // Increased line height for elegance
     letterSpacing: 0.3,
   },
   bottomBarContainer: {

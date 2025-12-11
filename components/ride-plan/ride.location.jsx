@@ -157,7 +157,7 @@ export default function RideLocationSelector({
     >
       {/* BACKGROUND GRADIENT */}
       <LinearGradient
-        colors={[color.subPrimary,color.bgDark]}
+        colors={[color.subPrimary, color.bgDark]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -201,7 +201,7 @@ export default function RideLocationSelector({
 
       {/* CONTENT BODY */}
       <View style={styles.contentBody}>
-        
+
         {/* INPUTS CARD */}
         <View style={styles.inputCard}>
           {/* Pickup Input */}
@@ -224,7 +224,7 @@ export default function RideLocationSelector({
 
           {/* Divider Line */}
           <View style={styles.dividerContainer}>
-             <View style={styles.verticalLine} />
+            <View style={styles.verticalLine} />
           </View>
 
           {/* Dropoff Input */}
@@ -253,7 +253,7 @@ export default function RideLocationSelector({
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={() => { if (!expanded) snapTo("HALF"); }}
         >
-          
+
           {/* Use Current Location Option */}
           {!isFindingLocation && userLocation && (
             <Pressable
@@ -347,14 +347,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
   },
-  
+
   // Header Area
   headerWrapper: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 5 },
   handleContainer: { width: '100%', alignItems: 'center', paddingVertical: 10 },
   handleBar: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   iconButton: { padding: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12 },
-  headerTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium" },
+  headerTitle: { fontSize: fontSizes.FONT18, color: '#fff', fontFamily: "TT-Octosquares-Medium" },
 
   // Body
   contentBody: { flex: 1, paddingHorizontal: 20 },
@@ -372,23 +372,23 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: 'row', alignItems: 'center' },
   dotIndicator: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#888', marginTop: 14 },
   inputWrapper: { flex: 1, marginLeft: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingBottom: 8 },
-  inputLabel: { fontSize: 10, color: '#666', fontFamily: "TT-Octosquares-Medium", marginBottom: 2, letterSpacing: 1 },
-  textInput: { fontSize: 15, color: '#fff', fontFamily: "TT-Octosquares-Medium", height: 24, padding: 0 },
+  inputLabel: { fontSize: fontSizes.FONT10, color: '#666', fontFamily: "TT-Octosquares-Medium", marginBottom: 2, letterSpacing: 1 },
+  textInput: { fontSize: fontSizes.FONT16, color: '#fff', fontFamily: "TT-Octosquares-Medium", height: 24, padding: 0 },
   dividerContainer: { marginLeft: 3.5, height: 20, justifyContent: 'center' },
   verticalLine: { width: 1, height: '100%', backgroundColor: 'rgba(255,255,255,0.1)' },
 
   // List
   scrollList: { paddingBottom: 100, paddingTop: 10 },
   currentLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 5 },
-  currentLocationText: { fontSize: 15, color: color.primaryText, fontFamily: "TT-Octosquares-Medium", marginLeft: 0 },
-  
-  sectionHeader: { fontSize: 14, color: '#666', fontFamily: "TT-Octosquares-Medium", marginTop: 15, marginBottom: 10, textTransform: 'uppercase' },
+  currentLocationText: { fontSize: fontSizes.FONT16, color: color.primaryText, fontFamily: "TT-Octosquares-Medium", marginLeft: 0 },
+
+  sectionHeader: { fontSize: fontSizes.FONT14, color: '#666', fontFamily: "TT-Octosquares-Medium", marginTop: 15, marginBottom: 10, textTransform: 'uppercase' },
   savedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, marginBottom: 10 },
-  savedCount: { fontSize: 12, color: '#444', fontFamily: "TT-Octosquares-Medium" },
+  savedCount: { fontSize: fontSizes.FONT12, color: '#444', fontFamily: "TT-Octosquares-Medium" },
 
   resultRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' },
   iconBox: { width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
-  resultMain: { fontSize: 15, color: '#eee', fontFamily: "TT-Octosquares-Medium" },
-  resultSub: { fontSize: 12, color: '#888', marginTop: 3, fontFamily: "TT-Octosquares-Medium" },
-  emptyText: { fontSize: 14, color: '#555', textAlign: 'center', marginTop: 20, fontFamily: "TT-Octosquares-Medium" },
+  resultMain: { fontSize: fontSizes.FONT16, color: '#eee', fontFamily: "TT-Octosquares-Medium" },
+  resultSub: { fontSize: fontSizes.FONT12, color: '#888', marginTop: 3, fontFamily: "TT-Octosquares-Medium" },
+  emptyText: { fontSize: fontSizes.FONT14, color: '#555', textAlign: 'center', marginTop: 20, fontFamily: "TT-Octosquares-Medium" },
 });

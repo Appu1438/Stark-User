@@ -26,7 +26,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const SNAP_POINTS = {
   COLLAPSED: windowHeight(280),
   HALF: Math.round(SCREEN_HEIGHT * 0.55),
-  FULL: SCREEN_HEIGHT - (Platform.OS === "ios" ? 40 : 24),
+  FULL: Math.round(SCREEN_HEIGHT * 0.95),
 };
 
 // Maximum distance (km) for showing Auto option
@@ -54,6 +54,9 @@ export default function RideOptions({
   const panY = useRef(new Animated.Value(0)).current;
   const [expanded, setExpanded] = useState(false);
 
+  // --- NEW: Store dynamic heights for each card ---
+  const [contentHeights, setContentHeights] = useState({});
+
   // Card controllers per vehicleType
   const cardAnimRefs = useRef({});
 
@@ -67,6 +70,16 @@ export default function RideOptions({
       };
     }
     return cardAnimRefs.current[vehicleType];
+  };
+
+  // --- NEW: Handler to measure content size ---
+  const handleContentLayout = (vehicleType, event) => {
+    const { height } = event.nativeEvent.layout;
+    console.log(height)
+    // Only update if the height is significantly different to avoid render loops
+    if (!contentHeights[vehicleType] || Math.abs(contentHeights[vehicleType] - height) > 2) {
+        setContentHeights(prev => ({ ...prev, [vehicleType]: height }));
+    }
   };
 
   // PanResponder for sheet drag
@@ -209,10 +222,15 @@ export default function RideOptions({
     const ctrl = ensureCardControllers(vehicleType);
     const isSelected = selectedVehcile === vehicleType;
 
+    // --- NEW: Get measured height or default ---
+    // We add a small buffer (e.g. +10) if needed, or just use exact height
+    const dynamicHeight = contentHeights[vehicleType] || 250; 
+
     // animated values for card content
     const cardHeight = ctrl.expand.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, windowHeight(430)], // Slightly increased for better spacing
+      // --- CHANGED: Use dynamicHeight instead of fixed percentage ---
+      outputRange: [0, dynamicHeight], 
       extrapolate: "clamp",
     });
     const cardOpacity = ctrl.expand.interpolate({
@@ -314,99 +332,102 @@ export default function RideOptions({
                 },
               ]}
             >
-              {/* ScrollView for *internal* details */}
               <Animated.ScrollView
                 showsVerticalScrollIndicator={false}
                 style={styles.detailsScrollView}
               >
-                {/* Tags (Restyled) */}
-                <View style={styles.tagsContainer}>
-                  <View style={styles.tag}>
-                    <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
-                      Capacity : {driver.capacity} Seats
-                    </Text>
-                  </View>
-
-                  {distance && (
+                {/* --- NEW: Wrapper View to measure content height --- */}
+                <View onLayout={(event) => handleContentLayout(vehicleType, event)}>
+                    
+                    {/* Tags (Restyled) */}
+                    <View style={styles.tagsContainer}>
                     <View style={styles.tag}>
-                      <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
-                        Distance : {Number(distance).toFixed(1)} km
-                      </Text>
+                        <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
+                        Capacity : {driver.capacity} Seats
+                        </Text>
                     </View>
-                  )}
 
-                  {travelTimes.driving && (
-                    <View style={styles.tag}>
-                      <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
-                        Drop Off : {getEstimatedArrivalTime(travelTimes.driving)}
-                      </Text>
+                    {distance && (
+                        <View style={styles.tag}>
+                        <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
+                            Distance : {Number(distance).toFixed(1)} km
+                        </Text>
+                        </View>
+                    )}
+
+                    {travelTimes.driving && (
+                        <View style={styles.tag}>
+                        <Text style={[styles.tagText, { color: color.primaryText, fontSize: fontSizes.FONT12 }]}>
+                            Drop Off : {getEstimatedArrivalTime(travelTimes.driving)}
+                        </Text>
+                        </View>
+                    )}
                     </View>
-                  )}
-                </View>
 
-                {/* --- Details Section 1: Arrival & Duration --- */}
-                <View style={styles.detailSection}>
-                  <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
-                    TRIP DETAILS
-                  </Text>
-                  <Text style={[styles.detailText, { color: color.primaryText, fontSize: fontSizes.FONT15 }]}>
-                    Driver arrival in {estimateArrivalFromDriver(driver, currentLocation)}
-                  </Text>
-
-                  {travelTimes.driving && (
-                    <Text style={[styles.detailSubText, { color: '#888', fontSize: fontSizes.FONT13 }]}>
-                      Expected drop off : {getEstimatedArrivalTime(travelTimes.driving)}
+                    {/* --- Details Section 1: Arrival & Duration --- */}
+                    <View style={styles.detailSection}>
+                    <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
+                        TRIP DETAILS
                     </Text>
-                  )}
-                </View>
-
-                {/* --- Details Section 2: Fare --- */}
-                <View style={styles.detailSection}>
-                  <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
-                    FARE BREAKDOWN
-                  </Text>
-                  {[
-                    'Base fare calculated based on Km',
-                    'Includes applicable taxes (5%)',
-                  ].map((item, i) => (
-                    <View key={i} style={styles.bulletRow}>
-                      <View style={styles.bullet} />
-                      <Text style={[styles.detailListItem, { color: '#aaa', fontSize: fontSizes.FONT13 }]}>
-                        {item}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* --- Details Section 3: Features --- */}
-                <View style={styles.detailSection}>
-                  <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
-                    VEHICLE FEATURES
-                  </Text>
-                  {(CAB_FEATURES[vehicleType] || []).map((feat, idx) => (
-                    <View key={idx} style={styles.bulletRow}>
-                      <View style={styles.bullet} />
-                      <Text style={[styles.detailListItem, { color: '#ddd', fontSize: fontSizes.FONT13 }]}>
-                        {feat}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* --- Details Section 4: IMPORTANT NOTE (Replaces Safety) --- */}
-                <View style={[styles.detailSection, styles.lastDetailSection]}>
-                  <View style={styles.noteContainer}>
-                    <View style={styles.noteHeaderRow}>
-                      <Text style={[styles.premiumHeader, { color: color.primaryText, marginBottom: 0 }]}>
-                        IMPORTANT NOTE
-                      </Text>
-                    </View>
-                    <Text style={[styles.detailListItem, { color: '#ccc', fontSize: fontSizes.FONT13, lineHeight: 20, marginTop: 4 }]}>
-                      Tolls, parking fees, interstate permits, and waiting charges (if applicable) are extra over the fare.
+                    <Text style={[styles.detailText, { color: color.primaryText, fontSize: fontSizes.FONT15 }]}>
+                        Driver arrival in {estimateArrivalFromDriver(driver, currentLocation)}
                     </Text>
 
-                  </View>
-                </View>
+                    {travelTimes.driving && (
+                        <Text style={[styles.detailSubText, { color: '#888', fontSize: fontSizes.FONT13 }]}>
+                        Expected drop off : {getEstimatedArrivalTime(travelTimes.driving)}
+                        </Text>
+                    )}
+                    </View>
+
+                    {/* --- Details Section 2: Fare --- */}
+                    <View style={styles.detailSection}>
+                    <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
+                        FARE BREAKDOWN
+                    </Text>
+                    {[
+                        'Base fare calculated based on Km',
+                        'Includes applicable taxes (5%)',
+                    ].map((item, i) => (
+                        <View key={i} style={styles.bulletRow}>
+                        <View style={styles.bullet} />
+                        <Text style={[styles.detailListItem, { color: '#aaa', fontSize: fontSizes.FONT13 }]}>
+                            {item}
+                        </Text>
+                        </View>
+                    ))}
+                    </View>
+
+                    {/* --- Details Section 3: Features --- */}
+                    <View style={styles.detailSection}>
+                    <Text style={[styles.premiumHeader, { color: color.primaryGray }]}>
+                        VEHICLE FEATURES
+                    </Text>
+                    {(CAB_FEATURES[vehicleType] || []).map((feat, idx) => (
+                        <View key={idx} style={styles.bulletRow}>
+                        <View style={styles.bullet} />
+                        <Text style={[styles.detailListItem, { color: '#ddd', fontSize: fontSizes.FONT13 }]}>
+                            {feat}
+                        </Text>
+                        </View>
+                    ))}
+                    </View>
+
+                    {/* --- Details Section 4: IMPORTANT NOTE (Replaces Safety) --- */}
+                    <View style={[styles.detailSection, styles.lastDetailSection]}>
+                    <View style={styles.noteContainer}>
+                        <View style={styles.noteHeaderRow}>
+                        <Text style={[styles.premiumHeader, { color: color.primaryText, marginBottom: 0 }]}>
+                            IMPORTANT NOTE
+                        </Text>
+                        </View>
+                        <Text style={[styles.detailListItem, { color: '#ccc', fontSize: fontSizes.FONT13, lineHeight: 20, marginTop: 4 }]}>
+                        Tolls, parking fees, interstate permits, and waiting charges (if applicable) are extra over the fare.
+                        </Text>
+
+                    </View>
+                    </View>
+                </View> {/* --- End of Measurement Wrapper --- */}
               </Animated.ScrollView>
 
             </Animated.View>
@@ -506,8 +527,7 @@ export default function RideOptions({
             <LeftArrow />
           </Pressable>
           <Text style={{
-            fontSize: 20,
-            fontWeight: "600",
+            fontSize: fontSizes.FONT20,
             fontFamily: "TT-Octosquares-Medium",
             color: color.primaryText,
             letterSpacing: 0.5
@@ -629,7 +649,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   arrowIcon: {
-    fontSize: 20,
+    fontSize: fontSizes.FONT20,
     opacity: 0.7
   },
   expandedContainer: {
@@ -672,7 +692,7 @@ const styles = StyleSheet.create({
   },
   premiumHeader: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize: 11,
+    fontSize: fontSizes.FONT11,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 10,

@@ -33,7 +33,6 @@ export default function RideFare({ driver, distance, district }) {
             <Text
                 style={{
                     fontSize: fontSizes.FONT15,
-                    fontWeight: "600",
                     fontFamily: "TT-Octosquares-Medium",
                     color: color.primaryText,
                 }}

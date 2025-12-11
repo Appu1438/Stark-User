@@ -208,27 +208,27 @@ export default function SavedPlaces() {
 
       <View style={styles.actionRow}>
         <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => {
+          style={styles.actionBtn}
+          onPress={() => {
             setLocation(item.location);
             mapRef.current?.animateToRegion(
-                { ...item.location, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 400
+              { ...item.location, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 400
             );
-            }}
+          }}
         >
-            <Ionicons name="navigate-circle-outline" size={24} color="#fff" />
+          <Ionicons name="navigate-circle-outline" size={24} color="#fff" />
         </TouchableOpacity>
 
         <TouchableOpacity
-            style={[styles.actionBtn, {backgroundColor:'rgba(255, 82, 82, 0.1)'}]}
-            onPress={() => handleDelete(item._id)}
-            disabled={deletingId === item._id}
+          style={[styles.actionBtn, { backgroundColor: 'rgba(255, 82, 82, 0.1)' }]}
+          onPress={() => handleDelete(item._id)}
+          disabled={deletingId === item._id}
         >
-            {deletingId === item._id ? (
+          {deletingId === item._id ? (
             <ActivityIndicator size={18} color="#FF5252" />
-            ) : (
+          ) : (
             <Ionicons name="trash-outline" size={20} color="#FF5252" />
-            )}
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -260,19 +260,19 @@ export default function SavedPlaces() {
 
   if (loading) return (
     <View style={styles.mainContainer}>
-        <LinearGradient colors={[color.bgDark || "#050505", "#111"]} style={StyleSheet.absoluteFill} />
-        <SavedPlacesSkeleton />
+      <LinearGradient colors={[color.bgDark || "#050505", "#111"]} style={StyleSheet.absoluteFill} />
+      <SavedPlacesSkeleton />
     </View>
   );
 
   return (
     <View style={styles.mainContainer}>
-      <LinearGradient colors={[color.bgDark ,color.subPrimary]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[color.bgDark, color.subPrimary]} style={StyleSheet.absoluteFill} />
 
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={color.primary} />}>
-            
+
             {/* HEADER */}
             <View style={styles.header}>
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -287,7 +287,7 @@ export default function SavedPlaces() {
             {/* FORM CARD */}
             <View style={styles.formCard}>
               <Text style={styles.cardTitle}>Add New Place</Text>
-              
+
               <Text style={styles.label}>Label</Text>
               <TextInput
                 placeholder="e.g. Home, Work, Gym"
@@ -307,36 +307,36 @@ export default function SavedPlaces() {
               />
 
               {!findingLocation && userLocation && (
-                <TouchableOpacity 
-                    style={styles.currentLocBtn}
-                    onPress={() => {
-                        if (!userLocation) return;
-                        setSearchQuery(userLocationName);
-                        setSelectedLocation(userLocationName);
-                        setLocation(userLocation);
-                        setPlaceId(userPlaceId);
-                        mapRef.current?.animateToRegion({ ...userLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 400);
-                    }}
+                <TouchableOpacity
+                  style={styles.currentLocBtn}
+                  onPress={() => {
+                    if (!userLocation) return;
+                    setSearchQuery(userLocationName);
+                    setSelectedLocation(userLocationName);
+                    setLocation(userLocation);
+                    setPlaceId(userPlaceId);
+                    mapRef.current?.animateToRegion({ ...userLocation, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 400);
+                  }}
                 >
-                    <Ionicons name="locate" size={18} color={color.primaryText} />
-                    <Text style={styles.currentLocText}>Use Current Location</Text>
+                  <Ionicons name="locate" size={18} color={color.primaryText} />
+                  <Text style={styles.currentLocText}>Use Current Location</Text>
                 </TouchableOpacity>
               )}
 
               {/* AUTOCOMPLETE DROPDOWN */}
               {autocompleteResults.length > 0 && (
-                <View style={styles.dropdownContainer}>
+                <ScrollView style={styles.dropdownContainer}>
                   {autocompleteResults.map((place) => (
                     <TouchableOpacity
                       key={place.place_id}
                       onPress={() => handleSelectPlace(place.place_id, place.description)}
                       style={styles.dropRow}
                     >
-                      <Ionicons name="location-outline" size={16} color="#888" style={{marginTop:2}} />
+                      <Ionicons name="location-outline" size={16} color="#888" style={{ marginTop: 2 }} />
                       <Text style={styles.dropText}>{place.description}</Text>
                     </TouchableOpacity>
                   ))}
-                </View>
+                </ScrollView>
               )}
 
               {/* MAP PREVIEW */}
@@ -361,18 +361,18 @@ export default function SavedPlaces() {
                 </View>
               )}
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.saveButton}
                 onPress={handleSavePlace}
                 disabled={saving}
               >
-                 {saving ? <ActivityIndicator color="#000" /> : <Text style={styles.saveText}>Save Location</Text>}
+                {saving ? <ActivityIndicator color="#000" /> : <Text style={styles.saveText}>Save Location</Text>}
               </TouchableOpacity>
             </View>
 
             {/* SAVED LIST */}
             <Text style={styles.sectionTitle}>Your Places</Text>
-            
+
             <FlatList
               data={savedPlaces || []}
               keyExtractor={(item) => item.id?.toString() || item._id?.toString()}
@@ -380,8 +380,8 @@ export default function SavedPlaces() {
               scrollEnabled={false}
               ListEmptyComponent={
                 <View style={styles.emptyState}>
-                    <MaterialCommunityIcons name="map-marker-off" size={40} color="#333" />
-                    <Text style={styles.emptyText}>No saved places yet.</Text>
+                  <MaterialCommunityIcons name="map-marker-off" size={40} color="#333" />
+                  <Text style={styles.emptyText}>No saved places yet.</Text>
                 </View>
               }
             />
@@ -410,34 +410,34 @@ const styles = StyleSheet.create({
   // Header
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 15 },
   backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  pageTitle: { fontSize: 24, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
-  pageSubtitle: { fontSize: 13, color: "#888", fontFamily: "TT-Octosquares-Medium" },
+  pageTitle: { fontSize: fontSizes.FONT20, color: "#fff", fontFamily: "TT-Octosquares-Medium" },
+  pageSubtitle: { fontSize: fontSizes.FONT14, color: "#888", fontFamily: "TT-Octosquares-Medium" },
 
   // Form Card
   formCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 30 },
-  cardTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 20 },
-  
-  label: { fontSize: 12, color: '#888', marginBottom: 8, marginTop: 10, fontFamily: "TT-Octosquares-Medium" },
-  input: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, fontSize: 15, color: '#fff', fontFamily: "TT-Octosquares-Medium", borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  
-  currentLocBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 10, alignSelf: 'flex-start' },
-  currentLocText: { color: color.primaryText, fontSize: 13, fontFamily: "TT-Octosquares-Medium", marginLeft: 6 },
+  cardTitle: { fontSize: fontSizes.FONT18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 20 },
 
-  dropdownContainer: { backgroundColor: '#1a1a1a', borderRadius: 12, marginTop: 5, padding: 5, zIndex: 10, position: 'absolute', top: 180, left: 20, right: 20, borderWidth: 1, borderColor: '#333' },
+  label: { fontSize: fontSizes.FONT12, color: '#888', marginBottom: 8, marginTop: 10, fontFamily: "TT-Octosquares-Medium" },
+  input: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, fontSize: fontSizes.FONT16, color: '#fff', fontFamily: "TT-Octosquares-Medium", borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+
+  currentLocBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 10, alignSelf: 'flex-start' },
+  currentLocText: { color: color.primaryText, fontSize: fontSizes.FONT14, fontFamily: "TT-Octosquares-Medium", marginLeft: 6 },
+
+  dropdownContainer: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 12, marginTop: 20, padding: 5, zIndex: 10, position: 'absolute', top: 200, left: 20, right: 20, borderWidth: 1, borderColor: '#333' },
   dropRow: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', gap: 10 },
-  dropText: { color: '#eee', fontSize: 13, fontFamily: "TT-Octosquares-Medium", flex: 1 },
+  dropText: { color: '#eee', fontSize: fontSizes.FONT14, fontFamily: "TT-Octosquares-Medium", flex: 1 },
 
   mapContainer: { height: 180, borderRadius: 16, overflow: 'hidden', marginTop: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   saveButton: { backgroundColor: color.buttonBg, paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginTop: 20 },
-  saveText: { color: '#000', fontSize: 16, fontFamily: "TT-Octosquares-Medium", },
+  saveText: { color: '#000', fontSize: fontSizes.FONT16, fontFamily: "TT-Octosquares-Medium", },
 
   // List
-  sectionTitle: { fontSize: 18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 15 },
+  sectionTitle: { fontSize: fontSizes.FONT18, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 15 },
   placeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' },
   iconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
-  placeLabel: { fontSize: 16, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 2 },
-  placeAddr: { fontSize: 12, color: '#888', fontFamily: "TT-Octosquares-Medium", maxWidth: '90%' },
-  
+  placeLabel: { fontSize: fontSizes.FONT16, color: '#fff', fontFamily: "TT-Octosquares-Medium", marginBottom: 2 },
+  placeAddr: { fontSize: fontSizes.FONT12, color: '#888', fontFamily: "TT-Octosquares-Medium", maxWidth: '90%' },
+
   actionRow: { flexDirection: 'row', gap: 10, marginLeft: 10 },
   actionBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
 

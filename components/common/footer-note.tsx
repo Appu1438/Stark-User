@@ -7,7 +7,7 @@ export default function FooterNote() {
         <>
             <Text
                 style={{
-                    fontSize: fontSizes.FONT14,
+                    fontSize: fontSizes.FONT12,
                     color: "#888",
                     textAlign: "center",
                     fontFamily: "TT-Octosquares-Medium",

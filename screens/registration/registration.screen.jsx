@@ -14,7 +14,7 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 // Internal Utils
-import { windowHeight, windowWidth } from "@/themes/app.constant";
+import { fontSizes, windowHeight, windowWidth } from "@/themes/app.constant";
 import color from "@/themes/app.colors";
 import axiosInstance from "@/api/axiosInstance";
 import AppAlert from "@/components/modal/alert-modal/alert.modal";
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: "TT-Octosquares-Medium",
-    fontSize: 14,
+    fontSize: fontSizes.FONT14,
     color: color.primaryText,
     opacity: 0.6,
     textAlign: 'center',
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 13,
+    fontSize: fontSizes.FONT13,
     color: color.primaryText,
     marginBottom: 8,
     marginLeft: 4,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: fontSizes.FONT16,
     color: color.primaryText,
     fontFamily: "TT-Octosquares-Medium",
     height: '100%', // Ensure full height for better touch area
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitText: {
-    fontSize: 16,
+    fontSize: fontSizes.FONT16,
     color: color.primary,
     fontFamily: "TT-Octosquares-Medium",
   },
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: color.primaryText,
-    fontSize: 12,
+    fontSize: fontSizes.FONT12,
     fontFamily: "TT-Octosquares-Medium",
     opacity: 0.5,
   },
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: color.primaryText, // Or brand color if preferred
-    fontSize: 12,
+    fontSize: fontSizes.FONT12,
     fontFamily: "TT-Octosquares-Medium",
     textDecorationLine: 'underline',
     opacity: 0.9,

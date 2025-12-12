@@ -687,8 +687,8 @@ export default function RideDetailScreen() {
                 <Image
                   source={driverIcon}
                   style={{
-                    width: windowWidth(30),
-                    height: windowHeight(30),
+                    width: 35,
+                    height: 35,
                     resizeMode: "contain",
                     transform: [
                       {

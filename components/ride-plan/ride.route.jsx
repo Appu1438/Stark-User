@@ -162,8 +162,8 @@ export default function RideRoute({
                 <Image
                   source={getVehicleIcon(driver.vehicle_type)}
                   style={{
-                    width: windowWidth(30),
-                    height: windowHeight(30),
+                    width: 35,
+                    height: 35,
                     resizeMode: "contain",
                     transform: [
                       {

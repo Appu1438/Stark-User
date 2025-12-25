@@ -285,7 +285,7 @@ export default function RideOptions({
               <Text
                 style={[
                   styles.vehicleName,
-                  { color: color.primaryText, fontSize: fontSizes.FONT18 },
+                  { color: color.primaryText, fontSize: fontSizes.FONT16 },
                 ]}
               >
                 {vehicleNames[vehicleType]}

@@ -32,7 +32,7 @@ export default function RideFare({ driver, distance, district }) {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Text
                 style={{
-                    fontSize: fontSizes.FONT15,
+                    fontSize: fontSizes.FONT14,
                     fontFamily: "TT-Octosquares-Medium",
                     color: color.primaryText,
                 }}

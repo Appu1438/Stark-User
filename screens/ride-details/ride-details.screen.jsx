@@ -766,22 +766,40 @@ export default function RideDetailScreen() {
 
           {(ride.status === "Ongoing" || ride.status === "Reached") &&
             driverLocation && (
-              <MapViewDirections
-                origin={{
-                  latitude: driver.latitude,
-                  longitude: driver.longitude,
-                }}
-                destination={ride.destinationLocation}
-                apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
-                strokeWidth={4}
-                strokeColor={strokeColor}
-                lineCap="round"
-                lineJoin="round"
-                optimizeWaypoints
-                mode="DRIVING"
-                precision="high"
-                lineDashPattern={lineDash}
-              />
+              <>
+                <MapViewDirections
+                  origin={ride.currentLocation}
+                  destination={{
+                    latitude: driver.latitude,
+                    longitude: driver.longitude,
+                  }}
+                  apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
+                  strokeWidth={4}
+                  strokeColor={color.animatedStrokeColor}
+                  lineCap="round"
+                  lineJoin="round"
+                  optimizeWaypoints
+                  mode="DRIVING"
+                  precision="high"
+                  lineDashPattern={lineDash}
+                />
+                <MapViewDirections
+                  origin={{
+                    latitude: driver.latitude,
+                    longitude: driver.longitude,
+                  }}
+                  destination={ride.destinationLocation}
+                  apikey={process.env.EXPO_PUBLIC_GOOGLE_CLOUD_API_KEY}
+                  strokeWidth={4}
+                  strokeColor={strokeColor}
+                  lineCap="round"
+                  lineJoin="round"
+                  optimizeWaypoints
+                  mode="DRIVING"
+                  precision="high"
+                  lineDashPattern={lineDash}
+                />
+              </>
             )}
 
           {(ride.status === "Booked" || ride.status === "Cancelled") && (
@@ -1175,7 +1193,7 @@ const styles = StyleSheet.create({
 
     color: color.primaryText,
 
-    fontSize:  fontSizes.FONT20,
+    fontSize: fontSizes.FONT20,
 
     fontFamily: FONT_MEDIUM,
 
@@ -1188,7 +1206,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: 'grey',
-    fontSize:  fontSizes.FONT18,
+    fontSize: fontSizes.FONT18,
     fontFamily: FONT_REGULAR,  // 👈 custom font
     textAlign: "center",
     letterSpacing: 1,                     // makes it more clean
@@ -1291,7 +1309,7 @@ const styles = StyleSheet.create({
   },
   driverName: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     color: color.primaryText,
     marginBottom: 6,
   },
@@ -1306,7 +1324,7 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontFamily: FONT_MEDIUM,
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: '#FFA000',
     marginLeft: 4,
   },
@@ -1316,7 +1334,7 @@ const styles = StyleSheet.create({
   },
   tripCountText: {
     fontFamily: FONT_REGULAR,
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: '#FFA000',
   },
 
@@ -1336,7 +1354,7 @@ const styles = StyleSheet.create({
   },
   vehicleText: {
     fontFamily: FONT_MEDIUM,
-    fontSize:  fontSizes.FONT14,
+    fontSize: fontSizes.FONT14,
     color: color.primaryText,
     textTransform: 'capitalize',
   },
@@ -1368,7 +1386,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   otpLabel: {
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: color.primary,
     fontFamily: FONT_MEDIUM,
     letterSpacing: 1,
@@ -1390,14 +1408,14 @@ const styles = StyleSheet.create({
     borderWidth: 1
   },
   etaLabel: {
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: color.primary,
     fontFamily: FONT_MEDIUM,
     letterSpacing: 1,
     marginBottom: 4,
   },
   etaTime: {
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
     color: color.primary,
     letterSpacing: 2,
@@ -1408,7 +1426,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionHeaderLabel: {
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: color.primaryGray,
     fontFamily: FONT_MEDIUM,
     letterSpacing: 1,
@@ -1452,13 +1470,13 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   addressLabel: {
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: color.primaryGray,
     marginBottom: 2,
     fontFamily: FONT_REGULAR,
   },
   addressValue: {
-    fontSize:  fontSizes.FONT14,
+    fontSize: fontSizes.FONT14,
     color: color.primaryText,
     fontFamily: FONT_MEDIUM,
     lineHeight: 20,
@@ -1489,12 +1507,12 @@ const styles = StyleSheet.create({
     borderTopColor: '#F0F0F0',
   },
   fareTotalLabel: {
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
     color: color.primaryText,
   },
   fareTotalValue: {
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
     color: color.primaryText,
   },
@@ -1506,12 +1524,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   detailLabel: {
-    fontSize:  fontSizes.FONT14,
+    fontSize: fontSizes.FONT14,
     color: color.primaryGray,
     fontFamily: FONT_REGULAR,
   },
   detailValue: {
-    fontSize:  fontSizes.FONT14,
+    fontSize: fontSizes.FONT14,
     color: color.primaryText,
     fontFamily: FONT_MEDIUM,
     maxWidth: '60%',
@@ -1533,7 +1551,7 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     color: color.primaryGray,
     marginBottom: 16,
     textAlign: 'center',
@@ -1565,13 +1583,13 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize:  fontSizes.FONT18,
+    fontSize: fontSizes.FONT18,
     color: color.primaryText,
     marginBottom: 2,
   },
   statLabel: {
     fontFamily: FONT_REGULAR,
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: color.lightGray,
   },
   verticalLine: {
@@ -1616,12 +1634,12 @@ const styles = StyleSheet.create({
   },
   ratingTitle: {
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize:  fontSizes.FONT18,
+    fontSize: fontSizes.FONT18,
     color: color.primary,
   },
   ratingSubtitle: {
     fontFamily: FONT_MEDIUM,
-    fontSize:  fontSizes.FONT14,
+    fontSize: fontSizes.FONT14,
     color: color.primary, // Highlight the feedback text (e.g., "Excellent")
     marginTop: 2,
   },
@@ -1653,7 +1671,7 @@ const styles = StyleSheet.create({
   submitRatingText: {
     color: '#fff',
     fontFamily: 'TT-Octosquares-Medium',
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     letterSpacing: 0.5,
   },
 
@@ -1690,17 +1708,17 @@ const styles = StyleSheet.create({
   btnTextPrimary: {
     color: color.primary,
     fontFamily: FONT_MEDIUM,
-    fontSize:  fontSizes.FONT14,
+    fontSize: fontSizes.FONT14,
   },
   btnTextOutline: {
     color: color.primaryText,
     fontFamily: FONT_MEDIUM,
-    fontSize:  fontSizes.FONT14,
+    fontSize: fontSizes.FONT14,
   },
   footerNote: {
     fontFamily: FONT_MEDIUM,
     textAlign: 'center',
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: color.lightGray,
     marginTop: 10,
   },

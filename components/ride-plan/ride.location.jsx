@@ -175,8 +175,9 @@ export default function RideLocationSelector({
                   title: "Please Wait",
                   message: "We are processing your booking request.",
                   confirmText: "OK",
-                  showCancel: false,
+                  cancelText: "Exit",
                   onConfirm: () => setShowAlert(false),
+                  onCancel: () => router.back()
                 });
                 setShowAlert(true);
                 return;

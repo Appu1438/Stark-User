@@ -110,8 +110,10 @@ export default function RidePlanScreen() {
     title: "",
     message: "",
     confirmText: "OK",
+    cancelText: "Cancel",
     showCancel: false,
     onConfirm: () => setShowAlert(false),
+    onCancel: () => setShowAlert(false),
   });
 
 
@@ -124,8 +126,9 @@ export default function RidePlanScreen() {
             title: "Please Wait",
             message: "We are processing your booking request. Do not exit this screen.",
             confirmText: "OK",
-            showCancel: false,
+            cancelText: "Exit",
             onConfirm: () => setShowAlert(false),
+            onCancel: () => router.back()
           });
           setShowAlert(true);
 
@@ -142,7 +145,7 @@ export default function RidePlanScreen() {
       }
     }, [watingForBookingResponse])
   );
-  
+
   useEffect(() => {
     const activeDrivers = driverLists.filter(
       d => d.latitude !== null && d.longitude !== null
@@ -423,33 +426,70 @@ export default function RidePlanScreen() {
     getDistanceAndFitMap();
   }, [marker, currentLocation]);
 
+  const confirmOrder = () => {
+    setAlertConfig({
+      title: "Confirm Ride Booking",
+      message: "Are you sure you want to request a ride?\nPlease avoid pressing back while the system finds a driver.",
+      confirmText: "Yes",
+      cancelText: "No",
+      showCancel: true,
+      onConfirm: () => {
+        setShowAlert(false);
+        handleOrder();   // ⭐ Proceed only after confirming
+      },
+      onCancel: () => setShowAlert(false),
+    });
+
+    setShowAlert(true);
+  };
 
   const handleOrder = async () => {
+    // -------------------------------------
+    // 🚨 BASIC VALIDATIONS
+    // -------------------------------------
     if (!selectedVehcile) {
-      Toast.show("Please select your cab!", { type: "warning", placement: "bottom" });
+      Toast.show("Please select your cab!", {
+        type: "warning",
+        placement: "bottom",
+      });
       return;
     }
 
-    const driversForType = driverLists.filter(d => d.vehicle_type === selectedVehcile);
+    const driversForType = driverLists.filter(
+      (d) => d.vehicle_type === selectedVehcile
+    );
+
     if (driversForType.length === 0) {
-      Toast.show("No drivers available for this vehicle type!", { type: "danger" });
+      Toast.show("No drivers available for this vehicle type!", {
+        type: "danger",
+      });
       return;
     }
+
+    // -------------------------------------
+    // 🔁 LOCAL STATE
+    // -------------------------------------
+    let assigned = false;
+    let rejectedCount = 0;
+    let expiryTimer = null;
 
     try {
+      setWaitingForBookingResponse(true);
 
-      setWaitingForBookingResponse(true)
-
+      // -------------------------------------
+      // 1️⃣ CHECK ACTIVE RIDE
+      // -------------------------------------
       const { hasActiveRide, ride } = await checkUserActiveRide();
 
       if (hasActiveRide) {
-        // Show AppAlert or Toast
+        setWaitingForBookingResponse(false);
+
         setModalMessage("You already have an ongoing ride!");
-        setModalSubMessage("Please finish or cancel your current ride before booking a new one.");
+        setModalSubMessage(
+          "Please finish or cancel your current ride before booking a new one."
+        );
         setModalType("error");
         setModalVisible(true);
-
-        setWaitingForBookingResponse(false)
 
         setTimeout(() => {
           router.replace({
@@ -458,32 +498,50 @@ export default function RidePlanScreen() {
           });
         }, 3000);
 
-        return; // stop order flow
+        return;
       }
-    } catch (error) {
 
-      console.log("Active ride check failed:", error);
-      Toast.show("Could not verify ride status. Please try again.", { type: "danger" });
-      setWaitingForBookingResponse(false)
+      // -------------------------------------
+      // 2️⃣ CREATE RIDE REQUEST (BACKEND)
+      // -------------------------------------
+      const uniqueRideKey = `${user?.id}_${Date.now()}`;
 
-      return;
-    }
+      try {
+        await axiosInstance.post("/ride-request/create", {
+          uniqueRideKey,
+          userId: user?.id,
+        });
+      } catch (err) {
+        setWaitingForBookingResponse(false);
 
-    try {
-      sendPushNotification(
-        user?.notificationToken,
-        "Ride Request Sent",
-        "Finding a driver for you Don't press back button."
-      );
+        const message = err?.response?.data?.message;
 
+        if (message?.includes("request")) {
+          Toast.show("A ride request is already in progress. Please wait.", {
+            type: "warning",
+            placement: "bottom",
+          });
+        } else {
+          Toast.show("Unable to create ride request. Please try again.", {
+            type: "danger",
+            placement: "bottom",
+          });
+        }
 
+        return;
+      }
+
+      // -------------------------------------
+      // 3️⃣ CALCULATE FARE
+      // -------------------------------------
       const fareDetails = await calculateFare({
-        driver: driversForType[0], // use first driver for fare calculation
+        driver: driversForType[0],
         distance,
-        district: district
+        district,
       });
 
       const rideRequestData = {
+        uniqueRideKey,
         user,
         currentLocation,
         marker,
@@ -497,86 +555,126 @@ export default function RidePlanScreen() {
         },
       };
 
-      Toast.show("Finding a driver for you Don't press back button", { type: "success" });
+      // -------------------------------------
+      // 📢 USER NOTIFICATION
+      // -------------------------------------
+      sendPushNotification(
+        user?.notificationToken,
+        "Ride Request Sent",
+        "Finding a driver for you. Don't press back button."
+      );
 
-      let index = 0;
-      let assigned = false;
-      const tryNextDriver = async () => {
-        if (index >= driversForType.length) {
-          if (!assigned) {
-            sendPushNotification(
-              user?.notificationToken,
-              "🚫 No Drivers Available 🚫",
-              "Sorry, no drivers are available right now. Please try a different cab or try again shortly."
-            );
+      Toast.show("Finding a driver for you... Please wait.", {
+        type: "success",
+      });
 
-            setModalMessage("🚫 No drivers are currently available for your selected cab 🚫");
-            setModalSubMessage(" Please try choosing a different cab or try again later. Thank you! ")
-            setModalType("error");
-            setModalVisible(true);
-
-            setWaitingForBookingResponse(false);
-          }
-          return;
-        }
-
-
-        const currentDriver = driversForType[index];
-        index++;
-
-        // Send ride request to this driver only
-
-        sendPushNotification(currentDriver.notificationToken,
+      // -------------------------------------
+      // 4️⃣ BROADCAST TO DRIVERS
+      // -------------------------------------
+      driversForType.forEach((driver) => {
+        sendPushNotification(
+          driver.notificationToken,
           "New Ride Request",
           "You have a new ride request."
         );
+
         socketService.send({
           type: "rideRequest",
           role: "user",
           userId: user?.id,
-          driverId: currentDriver.id,
+          driverId: driver.id,
           rideRequest: rideRequestData,
         });
+      });
 
+      // -------------------------------------
+      // 5️⃣ UX EXPIRY TIMER (60s)
+      // -------------------------------------
+      expiryTimer = setTimeout(() => {
+        if (!assigned) {
+          setWaitingForBookingResponse(false);
 
-        // Listen for driver response
-        socketService.onMessage((message) => {
-          if (message.type === "rideAccepted" && message.rideData.driver?.id === currentDriver.id && !assigned) {
-            assigned = true;
+          setModalMessage("🚫 No drivers available!");
+          setModalSubMessage("Please try again later or choose a different cab.");
+          setModalType("error");
+          setModalVisible(true);
+        }
+      }, 60_000);
 
-            const matchedDriver = driverLists.find(d => d.id === message.rideData.driver?.id);
-            // message.rideData.driver = matchedDriver;
-            // useRideStore.getState().setRideDetails(message.rideData);
-            setModalMessage("✅ Your ride has been accepted! Enjoy your ride.");
-            setModalSubMessage(`Driver ${matchedDriver.name} is assigned for your Ride . Please pay your driver after reaching your Destination. Have a nice trip . Thank You `)
-            setModalType("success");
-            setModalVisible(true);
-            // Toast.show("Ride Accepted . Enjoy Your Ride", { type: "success" });
+      // -------------------------------------
+      // 6️⃣ SOCKET LISTENER
+      // -------------------------------------
+      const onMessage = async (message) => {
+        if (assigned) return;
+
+        // 🎉 ACCEPTED
+        if (
+          message.type === "rideAccepted" &&
+          message.rideData?.rideData &&
+          message.rideData.driver
+        ) {
+          assigned = true;
+
+          const matchedDriver = driverLists.find(
+            (d) => d.id === message.rideData.driver.id
+          );
+
+          setModalMessage("✅ Your ride has been accepted!");
+          setModalSubMessage(
+            `Driver ${matchedDriver?.name} is assigned. Have a safe trip!`
+          );
+          setModalType("success");
+          setModalVisible(true);
+
+          setWaitingForBookingResponse(false);
+
+          setTimeout(() => {
+            router.replace({
+              pathname: "/(routes)/ride-details",
+              params: {
+                rideId: JSON.stringify(message.rideData.rideData.id),
+              },
+            });
+          }, 3000);
+        }
+
+        // ❌ REJECTED
+        if (message.type === "rideRejected" && !assigned) {
+          rejectedCount++;
+
+          if (rejectedCount === driversForType.length) {
+            await axiosInstance.post("/ride-request/expire", {
+              uniqueRideKey,
+              userId: user?.id,
+            });
 
             setWaitingForBookingResponse(false);
 
-
-            // Delay navigation so modal is visible
-            setTimeout(() => {
-              router.replace({
-                pathname: "/(routes)/ride-details",
-                params: { rideId: JSON.stringify(message.rideData.rideData.id) },
-              });
-            }, 3000); // 2 seconds delay
-          } else if (message.type === "rideRejected" && message.driverId === currentDriver.id && !assigned) {
-            console.log(`Driver ${currentDriver.id} rejected, trying next`);
-            tryNextDriver();
+            setModalMessage("🚫 No drivers available!");
+            setModalSubMessage(
+              "Please try again later or choose a different cab."
+            );
+            setModalType("error");
+            setModalVisible(true);
           }
-        });
+        }
       };
 
-      tryNextDriver(); // Start with first driver
+      socketService.onMessage(onMessage);
     } catch (error) {
-      setWaitingForBookingResponse(false)
       console.error(error);
-      Toast.show("Something went wrong. Please try again.", { type: "danger" });
+
+      setWaitingForBookingResponse(false);
+      Toast.show(
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.",
+        { type: "danger" }
+      );
     }
   };
+
+
+
 
   return (
     <BottomSheetModalProvider>
@@ -630,7 +728,7 @@ export default function RidePlanScreen() {
             vehicleNames={vehicleNames}
             selectedVehcile={selectedVehcile}
             setselectedVehcile={setselectedVehcile}
-            handleOrder={handleOrder}
+            handleOrder={confirmOrder}
             watingForBookingResponse={watingForBookingResponse}
             setlocationSelected={setlocationSelected}
             setWaitingForResponse={setWaitingForBookingResponse}
@@ -685,8 +783,9 @@ export default function RidePlanScreen() {
         title={alertConfig.title}
         message={alertConfig.message}
         confirmText={alertConfig.confirmText}
-        showCancel={alertConfig.showCancel}
+        cancelText={alertConfig.cancelText}
         onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
       />
 
     </BottomSheetModalProvider>

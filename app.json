@@ -30,7 +30,7 @@
       "expo-router"
     ],
     "android": {
-      "package": "com.adithyanskumar.stark",
+      "package": "com.starkcabs.stark",
       "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -46,7 +46,7 @@
     "ios": {
       "supportsTablet": true,
       "icon": "...",
-      "bundleIdentifier": "com.adithyanskumar.stark",
+      "bundleIdentifier": "com.starkcabs.stark",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -56,8 +56,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": "56aee935-c73a-470b-825f-34e350e13bff"
-      }
-    }
+        "projectId": "3cf9105e-ca08-4cbc-964b-2040139bbcd9"
+      },
+      "router": {}
+    },
+    "owner": "stark-opc-pvt-ltd"
   }
 }

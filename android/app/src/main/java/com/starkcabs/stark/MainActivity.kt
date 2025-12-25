@@ -1,4 +1,4 @@
-package com.adithyanskumar.stark
+package com.starkcabs.stark
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

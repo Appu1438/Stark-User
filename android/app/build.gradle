@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.adithyanskumar.stark'
+    namespace 'com.starkcabs.stark'
     defaultConfig {
-        applicationId 'com.adithyanskumar.stark'
+        applicationId 'com.starkcabs.stark'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

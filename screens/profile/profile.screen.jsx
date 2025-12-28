@@ -101,6 +101,7 @@ export default function Profile() {
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{user.name}</Text>
+              <Text style={styles.profileNumber}>{user.phone_number}</Text>
               <Text style={styles.profileEmail}>{user.email}</Text>
               <View style={styles.tagRow}>
                 <View style={styles.proTag}>
@@ -313,12 +314,19 @@ const styles = StyleSheet.create({
     fontFamily: 'TT-Octosquares-Medium',
     letterSpacing: 0.5,
   },
+  profileNumber: {
+    fontSize: fontSizes.FONT14,
+    color: '#888',
+    fontFamily: 'TT-Octosquares-Medium',
+    marginTop: 5,
+    marginBottom: 5
+  },
   profileEmail: {
     fontSize: fontSizes.FONT14,
     color: '#888',
     fontFamily: 'TT-Octosquares-Medium',
-    marginTop: 2,
-    marginBottom: 8,
+    marginTop: 0,
+    marginBottom: 10,
   },
   tagRow: {
     flexDirection: 'row',

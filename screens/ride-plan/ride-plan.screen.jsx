@@ -181,7 +181,7 @@ export default function RidePlanScreen() {
 
   //Socket
   useEffect(() => {
-    socketService.onNearbyDrivers(async (driversFromSocket) => {
+    const unsubscribeNearby = socketService.onNearbyDrivers(async (driversFromSocket) => {
       if (!driversFromSocket || driversFromSocket.length === 0) {
         setDriverLists([]);
         setdriverLoader(false);
@@ -214,7 +214,7 @@ export default function RidePlanScreen() {
         });
 
         setDriverLists(merged);
-        useDriverStore.getState().setDriverLists(merged); // global Zustand store
+        useDriverStore.getState().setDriverLists(merged);
 
       } catch (error) {
         console.error("Failed to fetch driver data:", error);
@@ -223,14 +223,16 @@ export default function RidePlanScreen() {
       }
     });
 
-    socketService.onDriverLocationUpdates((updates) => {
+    const unsubscribeUpdates = socketService.onDriverLocationUpdates((updates) => {
       updateDriverLocation(updates);
     });
 
     return () => {
-      socketService.clearListeners();
+      unsubscribeNearby?.();
+      unsubscribeUpdates?.();
     };
   }, []);
+
 
 
   useEffect(() => {

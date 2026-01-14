@@ -15,6 +15,8 @@ export const useGetUserData = () => {
         setUser(res.data.user);
         setLoading(false);
       }, 0);
+      await AsyncStorage.setItem("userData", JSON.stringify(res.data.user));
+
     } catch (error) {
       console.log("Failed to fetch user data:", error);
 

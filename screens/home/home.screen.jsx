@@ -63,14 +63,7 @@ export default function Home() {
     setRefreshing(false);
   }, [refetchRides]);
 
-  useEffect(() => {
-    socketService.connect();
-    socketService.clearListeners();
-    return () => {
-      socketService.clearListeners();
-      socketService.disconnect();
-    };
-  }, []);
+ 
 
   useFocusEffect(
     useCallback(() => {

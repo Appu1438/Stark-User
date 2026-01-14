@@ -102,38 +102,41 @@ export default function RideDetailScreen() {
 
   // ✅ Live Driver Location via Socket
   useEffect(() => {
-    socketService.onDriverLocationUpdates((updates) => {
-      const live = updates.find((d) => d.id === driver.id);
+    const unsubscribeLocation = socketService.onDriverLocationUpdates((updates) => {
+      const live = updates.find((d) => d.id === driver?.id);
       if (live?.current) {
         const newCoordinate = {
           latitude: live.current.latitude,
           longitude: live.current.longitude,
         };
+
         driverLocation?.timing({
           ...newCoordinate,
           duration: 1000,
           useNativeDriver: false,
         }).start();
-        // Update actual driver state too
+
         setDriver((prev) => ({
           ...prev,
           latitude: live.current.latitude,
           longitude: live.current.longitude,
           heading: live.heading,
         }));
+
         setDriverHeading(live.heading);
       }
     });
 
-    socketService.onMessage((message) => {
-      console.log(message)
+    const unsubscribeMessage = socketService.onMessage((message) => {
+      console.log(message);
 
       if (message.type === "driverLocation") {
-        const live = message.drivers.find(d => d.id === ride?.driverId?._id);
-        console.log(live)
+        const live = message.drivers.find(
+          (d) => d.id === ride?.driverId?._id
+        );
+
         if (live?.current) {
           if (!driver) {
-            // Initialize driver if not already set
             setDriver({
               id: live.id,
               latitude: live.current.latitude,
@@ -156,34 +159,36 @@ export default function RideDetailScreen() {
 
             setDriverHeading(live.heading);
           } else {
-            // Update driver position
             driverLocation?.timing({
               latitude: live.current.latitude,
               longitude: live.current.longitude,
               duration: 1000,
               useNativeDriver: false,
             }).start();
+
             setDriverHeading(live.heading);
           }
         }
       }
 
       if (message.type === "rideStatusUpdate") {
-        // Only update if this message belongs to the current ride
         if (ride?.id === message.rideId) {
           setRide((prevRide) => ({
             ...prevRide,
             status: message.status,
           }));
-          // Optional toast alert
+
           Toast.show(message.message, { type: "success" });
         }
       }
-
     });
 
-    return () => socketService.clearListeners();
+    return () => {
+      unsubscribeLocation?.();
+      unsubscribeMessage?.();
+    };
   }, [driver, driverLocation, ride]);
+
 
   // ✅ Calculate Map Region
   const regionSetRef = useRef(false); // to track if initial region was set
@@ -511,6 +516,7 @@ export default function RideDetailScreen() {
     socketService.send({
       type: "rideStatusUpdate",
       role: "user",
+      userId: ride.userId._id,
       rideData: {
         id: ride.id,
         user: { id: ride.userId._id },

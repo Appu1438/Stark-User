@@ -21,6 +21,7 @@ export const logout = async (setLoading) => {
 
         // Clear token
         await AsyncStorage.removeItem("accessToken");
+        await AsyncStorage.removeItem("userData");
 
         // Stop loader before navigating
         if (typeof setLoading === "function") {
@@ -34,6 +35,7 @@ export const logout = async (setLoading) => {
 
         // Always clear token even if backend fails
         await AsyncStorage.removeItem("accessToken");
+        await AsyncStorage.removeItem("userData");
 
         // Stop loader before navigation
         if (typeof setLoading === "function") {

@@ -31,7 +31,7 @@ export default function SignInText({
       >
         {subtitle
           ? subtitle
-          : "Enter your phone number, get one otp and let's go 😍"}
+          : "Enter your phone number, get one otp in whatsapp and let's go 😍"}
       </Text>
     </>
   );

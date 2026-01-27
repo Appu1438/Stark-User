@@ -50,7 +50,7 @@ export default function OtpVerificationScreen() {
           pathname: "/(routes)/registration",
           params: { user: JSON.stringify(user) },
         });
-        toast.show("Account verified!");
+        toast.show("Number Verified!");
       } else {
         await AsyncStorage.setItem("accessToken", res.data.accessToken);
         navigation.dispatch(
@@ -90,7 +90,7 @@ export default function OtpVerificationScreen() {
         <View>
           <SignInText
             title={"OTP Verification"}
-            subtitle={"Check your phone number for the otp!"}
+            subtitle={"Check your whatsapp for the otp!"}
           />
           <OTPTextInput
             handleTextChange={(code) => setOtp(code)}

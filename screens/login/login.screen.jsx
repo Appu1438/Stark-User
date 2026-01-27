@@ -48,7 +48,7 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     if (!phone_number || !countryCode) {
-      toast.show("Please fill the fields!", {
+      toast.show("Please enter your phone number", {
         placement: "bottom",
       });
       return;
@@ -57,36 +57,52 @@ export default function LoginScreen() {
     setloading(true);
 
     const phoneNumber = `+${countryCode}${phone_number}`;
-    console.log("Phone number:", phoneNumber);
-    console.log("API URI:", process.env.EXPO_PUBLIC_API_URI);
 
     try {
       const res = await axiosInstance.post(
         "/registration",
         { phone_number: phoneNumber },
-        { withCredentials: true } // ✅ send cookies if your backend uses refresh tokens
+        { withCredentials: true }
       );
 
       setloading(false);
 
-      // Navigate to OTP verification screen
-      router.push({
-        pathname: "/(routes)/otp-verification",
-        params: { phoneNumber },
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      setloading(false);
-
+      // ✅ SUCCESS TOAST
       toast.show(
-        "Something went wrong! Please check your phone number.",
+        res.data.message || res.data.data.message || "Whatsapp OTP sent successfully",
         {
-          type: "danger",
+          type: "success",
           placement: "bottom",
+          duration: 2000, // optional
         }
       );
+
+      // ⏳ Small delay so user sees the toast
+      setTimeout(() => {
+        router.push({
+          pathname: "/(routes)/otp-verification",
+          params: { phoneNumber },
+        });
+      }, 600);
+
+    } catch (error) {
+      setloading(false);
+
+      console.log("Send OTP Error:", error?.response?.data);
+
+      // Extract backend message
+      const message =
+        error?.response?.data?.message ||
+        "Unable to send OTP. Please try again.";
+
+      toast.show(message, {
+        type: "danger",
+        placement: "bottom",
+      });
     }
   };
+
+
 
   return (
     <AuthContainer

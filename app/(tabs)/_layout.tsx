@@ -15,6 +15,17 @@ export default function _layout({ children }: { children: ReactNode }) {
           headerShown: false,
           tabBarShowLabel: false,
           gestureEnabled: false, // disables swipe-back on iOS
+          tabBarStyle: {
+            height: 60,              // 👈 fixed tab height
+            paddingBottom: 8,        // 👈 control icon alignment
+            paddingTop: 8,
+            backgroundColor: color.subPrimary,
+            borderTopWidth: 0,
+          },
+
+          tabBarIconStyle: {
+            marginTop: 4,
+          },
           tabBarIcon: ({ focused }) => {
             let iconName;
             if (route.name === "home/index") {

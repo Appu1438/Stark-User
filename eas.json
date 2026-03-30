@@ -1,4 +1,8 @@
 {
+  "cli": {
+    "version": ">= 16.25.0",
+    "appVersionSource": "remote"
+  },
   "build": {
     "development": {
       "developmentClient": true,
@@ -23,5 +27,8 @@
         "image": "ubuntu-22.04-jdk-17-ndk-r26b"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

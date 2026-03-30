@@ -41,7 +41,8 @@
         "googleMaps": {
           "apiKey": "AIzaSyDZ3-iM9suiGVssgSjEdApgQXpXmDgvVAc"
         }
-      }
+      },
+      "prebuildCommand": null
     },
     "ios": {
       "supportsTablet": true,

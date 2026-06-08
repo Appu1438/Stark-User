@@ -179,6 +179,12 @@ export default function Profile() {
             icon={<Ionicons name="heart" size={18} color="#FF5252" />}
             isLast
           />
+          <SectionLink
+            title="Invite Friends"
+            path="/(routes)/profile/refer-friend"
+            icon={<Ionicons name="gift" size={18} color="#8B5CF6" />}
+            isLast
+          />
         </View>
 
         {/* GROUP 2: SUPPORT & HELP */}
@@ -262,7 +268,7 @@ const styles = StyleSheet.create({
   versionText: {
     textAlign: 'center',
     color: '#444',
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     marginTop: 20,
     fontFamily: 'TT-Octosquares-Medium',
   },
@@ -369,12 +375,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: '#fff',
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
   },
   statLabel: {
     color: '#666',
-    fontSize:  fontSizes.FONT11,
+    fontSize: fontSizes.FONT11,
     marginTop: 2,
     fontFamily: 'TT-Octosquares-Medium',
 
@@ -412,13 +418,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   activityValue: {
-    fontSize:  fontSizes.FONT18,
+    fontSize: fontSizes.FONT18,
     color: '#fff',
     fontFamily: 'TT-Octosquares-Medium',
     lineHeight: 22,
   },
   activityLabel: {
-    fontSize:  fontSizes.FONT12,
+    fontSize: fontSizes.FONT12,
     color: '#888', // Muted text for labels
     fontFamily: 'TT-Octosquares-Medium',
   },
@@ -437,7 +443,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#666',
-    fontSize:  fontSizes.FONT13,
+    fontSize: fontSizes.FONT13,
     fontFamily: 'TT-Octosquares-Medium',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -477,7 +483,7 @@ const styles = StyleSheet.create({
   },
   menuText: {
     color: '#eee',
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
   },
   menuItemRight: {
@@ -500,7 +506,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#FF3B30',
-    fontSize:  fontSizes.FONT16,
+    fontSize: fontSizes.FONT16,
     fontFamily: 'TT-Octosquares-Medium',
   },
 });

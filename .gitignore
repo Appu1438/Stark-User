@@ -42,3 +42,9 @@ expo-env.d.ts
 
 google-services.json
 stark-910ad-firebase-adminsdk-fbsvc-398524bd10.json
+
+
+credentials/
+credentials.json
+*.jks
+*.keystore

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Stark",
     "slug": "stark-user",
-    "version": "1.0.1",
+    "version": "1.2.1",
     "orientation": "portrait",
     "scheme": "stark",
     "userInterfaceStyle": "light",
@@ -24,22 +24,11 @@
           ]
         }
       ],
-      "expo-router",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "2.1.20",
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "buildToolsVersion": "35.0.0"
-          }
-        }
-      ]
+      "expo-router"
     ],
     "android": {
       "package": "com.starkcabs.stark",
-      "versionCode": 1,
+      "versionCode": 30,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

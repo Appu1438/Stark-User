@@ -63,7 +63,7 @@ export default function Home() {
     setRefreshing(false);
   }, [refetchRides]);
 
- 
+
 
   useFocusEffect(
     useCallback(() => {
@@ -84,6 +84,109 @@ export default function Home() {
   );
 
 
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
+
+  async function registerForPushNotificationsAsync() {
+    try {
+      if (!Device.isDevice) {
+        Toast.show("Must use a physical device for push notifications", {
+          type: "danger",
+        });
+        return;
+      }
+
+      // Android notification channel
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+      }
+
+      // Check notification permission
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== "granted") {
+        const { status } =
+          await Notifications.requestPermissionsAsync();
+
+        finalStatus = status;
+      }
+
+      if (finalStatus !== "granted") {
+        Toast.show("Notification permission was not granted", {
+          type: "danger",
+        });
+        return;
+      }
+
+      Toast.show("Notification permission granted", {
+        type: "success",
+      });
+
+      // Get Expo project ID
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ??
+        Constants?.easConfig?.projectId;
+
+      if (!projectId) {
+        Toast.show("Expo project ID not found", {
+          type: "danger",
+        });
+        return;
+      }
+
+      // Get Expo Push Token
+      const pushTokenString = (
+        await Notifications.getExpoPushTokenAsync({
+          projectId,
+        })
+      ).data;
+
+      console.log("EXPO PUSH TOKEN:", pushTokenString);
+
+      if (!pushTokenString) {
+        Toast.show("Failed to get Expo push token", {
+          type: "danger",
+        });
+        return;
+      }
+
+      Toast.show("Push token generated successfully", {
+        type: "success",
+      });
+
+      // Save token to backend
+      await axiosInstance.put("/update-push-token", {
+        token: pushTokenString,
+      });
+
+      Toast.show("Push token saved successfully", {
+        type: "success",
+      });
+
+      console.log("Push token:", pushTokenString);
+
+    } catch (e) {
+      console.log("Push notification error:", e);
+
+      Toast.show(
+        `Push notification error: ${e?.message || String(e)
+        }`,
+        {
+          type: "danger",
+        }
+      );
+    }
+  }
+  
   // useEffect(() => {
   //   registerForPushNotificationsAsync();
   // }, []);

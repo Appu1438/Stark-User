@@ -2,7 +2,7 @@
   "expo": {
     "name": "Stark",
     "slug": "stark-user",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "orientation": "portrait",
     "scheme": "stark",
     "userInterfaceStyle": "light",
@@ -24,11 +24,19 @@
           ]
         }
       ],
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo/FullLogo.png",
+          "color": "#000000"
+        }
+      ]
     ],
     "android": {
       "package": "com.starkcabs.stark",
-      "versionCode": 30,
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 31,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
